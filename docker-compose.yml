@@ -1,0 +1,42 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        COMPOSER_FLAGS: ""
+    ports: ["8080:80"]
+    volumes: [".:/var/www"]
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: testimonials
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+    ports: ["3306:3306"]
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.47.2-jammy
+    profiles: ["e2e"]
+    working_dir: /e2e
+    volumes: ["./tests/e2e:/e2e"]
+    environment:
+      BASE_URL: http://app
+    depends_on: [app]
+
+volumes:
+  dbdata: {}
