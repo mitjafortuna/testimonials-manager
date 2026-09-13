@@ -40,15 +40,24 @@ final class SchemaTest extends DatabaseTestCase
     public function testDeletingLandingWithTestimonialsIsRestricted(): void
     {
         [$landingId] = $this->seedLandingAndTestimonial();
-        $this->expectException(\PDOException::class);
-        self::$pdo->exec("DELETE FROM landings WHERE id = $landingId");
+        try {
+            self::$pdo->exec("DELETE FROM landings WHERE id = $landingId");
+            self::fail('expected deleting a landing with testimonials to be restricted by a foreign key');
+        } catch (\PDOException $e) {
+            self::assertSame('23000', $e->errorInfo[0] ?? null);
+            self::assertStringContainsString('fk_testimonials_landing', $e->getMessage());
+        }
     }
 
     public function testRatingOutsideRangeIsRejected(): void
     {
         [$landingId] = $this->seedLandingAndTestimonial();
-        $this->expectException(\PDOException::class);
-        self::insert('testimonials', ['landing_id' => $landingId, 'author_name' => 'x', 'text' => 'y', 'rating' => 6, 'gender' => 'unisex', 'sort_order' => 1]);
+        try {
+            self::insert('testimonials', ['landing_id' => $landingId, 'author_name' => 'x', 'text' => 'y', 'rating' => 6, 'gender' => 'unisex', 'sort_order' => 1]);
+            self::fail('expected rating outside 1-5 to be rejected by the CHECK constraint');
+        } catch (\PDOException $e) {
+            self::assertStringContainsString('chk_testimonials_rating', $e->getMessage());
+        }
     }
 
     public function testStoresCyrillicGreekTurkish(): void
