@@ -207,7 +207,7 @@ TDD: every phase starts with failing tests. Fixtures: a captured upstream respon
 - **GitHub**: public repo `mitjafortuna/testimonials-manager`, `main` protected by CI; each phase on a `phase/NN-name` branch merged with a merge commit.
 - **CI** (`.github/workflows/ci.yml`): lint → phpstan → unit → integration/API with MySQL service → e2e → Playwright report artifact.
 - **Release** (`release.yml`, on `v*` tags): validate `schema.sql` + `seed.sql` on a fresh MySQL, build `testimonials-manager-<tag>.zip` (excludes `.git`, `tests`, `node_modules`, `storage/uploads/*`; includes `vendor/` no-dev), attach to GitHub Release.
-- **Deploy** (`deploy.yml`, on push to `main`): `flyctl deploy`. Fly setup: app from the same Dockerfile, Fly MySQL (or MySQL on a small VM with a volume), volume at `/var/www/storage`, secrets for `.env` values, release command applies schema+seed if the DB is empty.
+- **Deploy** (`deploy.yml`, on push to `main`): `flyctl deploy`. Fly setup: app from the same Dockerfile, MySQL 8 as a second Fly app (`mysql:8` image + volume, internal network only), volume at `/var/www/storage`, secrets for `.env` values, release command applies schema+seed if the DB is empty.
 
 ## 11. Documentation deliverables
 
