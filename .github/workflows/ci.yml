@@ -1,0 +1,66 @@
+name: CI
+on:
+  push:
+    branches: [main, "phase/**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testimonials
+          MYSQL_USER: app
+          MYSQL_PASSWORD: app
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -proot"
+          --health-interval 5s --health-timeout 3s --health-retries 30
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: testimonials
+      DB_USER: app
+      DB_PASS: app
+      TEST_DB_NAME: testimonials_test
+      APP_ENV: test
+      APP_DEBUG: "1"
+      UPLOAD_DIR: storage/uploads
+      UPLOAD_MAX_BYTES: "5242880"
+      LANDINGS_API_URL: https://example.invalid/landings
+      LANDINGS_API_KEY: test-key
+      LANDINGS_API_FIXTURE: tests/fixtures/landings.json
+      SESSION_NAME: tm_session
+      API_BASE_URL: http://127.0.0.1:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: pdo_mysql, gd, curl, fileinfo, mbstring
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - run: composer lint
+      - run: composer stan
+      - run: composer test:unit
+      - name: Create test database
+        if: hashFiles('tests/Integration/**/*.php') != ''
+        run: mysql -h127.0.0.1 -uroot -proot < docker/mysql-init/01-test-db.sql
+      - run: composer test:integration
+        if: hashFiles('tests/Integration/**/*.php') != ''
+      - name: Start app server
+        if: hashFiles('tests/Api/**/*.php') != ''
+        run: |
+          mkdir -p storage/uploads
+          mysql -h127.0.0.1 -uroot -proot testimonials < database/schema.sql || true
+          mysql -h127.0.0.1 -uroot -proot testimonials < database/seed.sql || true
+          (php -S 127.0.0.1:8080 -t public public/index.php > /tmp/php-server.log 2>&1 &)
+          sleep 2
+      - run: composer test:api
+        if: hashFiles('tests/Api/**/*.php') != ''
+      - name: Server log on failure
+        if: failure() && hashFiles('tests/Api/**/*.php') != ''
+        run: cat /tmp/php-server.log
