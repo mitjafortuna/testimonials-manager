@@ -27,7 +27,7 @@ The release ZIP ships a `vendor/` directory, so Composer is not required.
 
 | Command | What |
 |---|---|
-| `make test` | all PHPUnit suites (unit, integration, api) |
+| `make test` | unit + integration + API suites (API runs against a fixture-backed built-in server; never calls the real upstream) |
 | `make lint` / `make stan` | code style (PSR-12) / static analysis (level 6) |
 | `make api` | API suite against a built-in PHP server inside the app container (mirrors CI) |
 | `make e2e` | Playwright end-to-end tests |
