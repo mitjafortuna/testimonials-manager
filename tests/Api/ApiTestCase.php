@@ -16,6 +16,11 @@ abstract class ApiTestCase extends TestCase
         $this->cookieJar = sys_get_temp_dir() . '/tm-cookies-' . str_replace('\\', '_', static::class) . '.txt';
     }
 
+    protected function cookieJarPath(): string
+    {
+        return $this->cookieJar;
+    }
+
     protected function baseUrl(): string
     {
         return rtrim(Env::get('API_BASE_URL', 'http://localhost') ?? 'http://localhost', '/');

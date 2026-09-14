@@ -10,6 +10,7 @@ use App\Domain\Exception\NotFoundException;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Testimonial\RatingResolver;
 use App\Domain\Testimonial\TestimonialValidator;
+use App\Infrastructure\Repository\ImageRepository;
 use App\Infrastructure\Repository\LandingRepository;
 use App\Infrastructure\Repository\TestimonialRepository;
 use Tests\Integration\DatabaseTestCase;
@@ -45,6 +46,7 @@ final class TestimonialServiceTest extends DatabaseTestCase
         $this->svc = new TestimonialService(
             new TestimonialRepository(self::$pdo),
             new LandingRepository(self::$pdo),
+            new ImageRepository(self::$pdo),
             new TestimonialValidator(),
             new RatingResolver(fn () => 3),
             $user,
