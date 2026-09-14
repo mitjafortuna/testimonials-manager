@@ -138,6 +138,30 @@ final class TestimonialRepository
         }
     }
 
+    /** @param list<int> $ids */
+    public function bulkSetActive(array $ids, bool $active, ?int $userId): int
+    {
+        if ($ids === []) {
+            return 0;
+        }
+        $marks = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("UPDATE testimonials SET is_active = ?, updated_by = ? WHERE id IN ($marks)");
+        $stmt->execute([(int) $active, $userId, ...$ids]);
+        return $stmt->rowCount();
+    }
+
+    /** @param list<int> $ids */
+    public function bulkDelete(array $ids): int
+    {
+        if ($ids === []) {
+            return 0;
+        }
+        $marks = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("DELETE FROM testimonials WHERE id IN ($marks)");
+        $stmt->execute($ids);
+        return $stmt->rowCount();
+    }
+
     /**
      * @param array<string,mixed> $r
      * @return Row

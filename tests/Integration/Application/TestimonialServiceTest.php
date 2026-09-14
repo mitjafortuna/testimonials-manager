@@ -219,4 +219,35 @@ final class TestimonialServiceTest extends DatabaseTestCase
             self::assertArrayHasKey('mode', $e->getFields());
         }
     }
+
+    public function testBulkUpdateActivateAndDelete(): void
+    {
+        $a = $this->svc->create(1, ['author_name' => 'A', 'text' => 'a', 'is_active' => false]);
+        $b = $this->svc->create(1, ['author_name' => 'B', 'text' => 'b', 'is_active' => false]);
+        $c = $this->svc->create(1, ['author_name' => 'C', 'text' => 'c']);
+
+        $res = $this->svc->bulkUpdate(1, [$a['id'], $b['id']], 'activate');
+        $byId = array_column($res['data'], null, 'id');
+        self::assertTrue($byId[$a['id']]['is_active']);
+        self::assertTrue($byId[$b['id']]['is_active']);
+
+        $res = $this->svc->bulkUpdate(1, [$c['id']], 'delete');
+        self::assertCount(2, $res['data']);
+    }
+
+    public function testBulkUpdateRejectsUnknownAction(): void
+    {
+        $t = $this->svc->create(1, ['author_name' => 'A', 'text' => 'a']);
+        $this->expectException(ValidationException::class);
+        $this->svc->bulkUpdate(1, [$t['id']], 'archive');
+    }
+
+    public function testBulkUpdateIgnoresIdsFromOtherLandings(): void
+    {
+        $mine = $this->svc->create(1, ['author_name' => 'Mine', 'text' => 'a']);
+        $other = $this->svc->create(2, ['author_name' => 'Other', 'text' => 'a']);
+        $this->svc->bulkUpdate(1, [$mine['id'], $other['id']], 'deactivate');
+        self::assertFalse($this->svc->get($mine['id'])['is_active']);
+        self::assertTrue($this->svc->get($other['id'])['is_active']);   // untouched
+    }
 }

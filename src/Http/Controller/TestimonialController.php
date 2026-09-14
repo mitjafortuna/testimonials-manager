@@ -51,6 +51,15 @@ final class TestimonialController
         return Response::json($this->service->reorder(self::id($request, 'id'), array_map('intval', $raw)));
     }
 
+    public function bulk(Request $request): Response
+    {
+        $raw = $request->input('ids');
+        if (!is_array($raw)) {
+            throw new ValidationException(['ids' => 'Must be an array of testimonial ids']);
+        }
+        return Response::json($this->service->bulkUpdate(self::id($request, 'id'), array_map('intval', $raw), (string) $request->input('action', '')));
+    }
+
     public function copyPreview(Request $request): Response
     {
         return Response::json($this->service->copyPreview(

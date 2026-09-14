@@ -118,4 +118,22 @@ final class TestimonialRepositoryTest extends DatabaseTestCase
         $repo->replaceOrAppend($dst, $repo->listByLanding($src), false, null);
         self::assertSame(4, $repo->countByLanding($dst));
     }
+
+    public function testBulkSetActiveAndBulkDelete(): void
+    {
+        $repo = new TestimonialRepository(self::$pdo);
+        $p = self::insert('products', ['parent_sku' => 'bulk-sku', 'title' => 'T']);
+        self::insert('landings', ['id' => 701, 'product_id' => $p, 'country' => 'EN', 'is_master' => 1, 'url' => 'u', 'title' => 'T', 'last_synced_at' => '2026-01-01 00:00:00']);
+        $l = 701;
+        $ids = [
+            $repo->insert($l, ['author_name' => 'A', 'text' => 'a', 'rating' => null, 'gender' => 'unisex', 'url' => null, 'is_active' => true, 'sort_order' => null], null),
+            $repo->insert($l, ['author_name' => 'B', 'text' => 'b', 'rating' => null, 'gender' => 'unisex', 'url' => null, 'is_active' => true, 'sort_order' => null], null),
+            $repo->insert($l, ['author_name' => 'C', 'text' => 'c', 'rating' => null, 'gender' => 'unisex', 'url' => null, 'is_active' => true, 'sort_order' => null], null),
+        ];
+        self::assertSame(2, $repo->bulkSetActive([$ids[0], $ids[1]], false, $this->userId));
+        $rows = $repo->listByLanding($l);
+        self::assertSame([false, false, true], array_column($rows, 'is_active'));
+        self::assertSame(1, $repo->bulkDelete([$ids[2]]));
+        self::assertCount(2, $repo->listByLanding($l));
+    }
 }
