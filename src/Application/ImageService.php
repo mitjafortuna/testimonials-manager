@@ -8,6 +8,7 @@ use App\Domain\Auth\CurrentUser;
 use App\Domain\Exception\NotFoundException;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Image\ImageValidator;
+use App\Infrastructure\Repository\ChangeLogRepository;
 use App\Infrastructure\Repository\ImageRepository;
 use App\Infrastructure\Repository\TestimonialRepository;
 use App\Infrastructure\Storage\ImageStorage;
@@ -23,6 +24,7 @@ final class ImageService
         private readonly ImageValidator $validator,
         private readonly ImageStorage $storage,
         private readonly CurrentUser $user,
+        private readonly ChangeLogRepository $changeLog,
     ) {
     }
 
@@ -50,6 +52,7 @@ final class ImageService
             $row = $this->images->find($id);
             if ($row !== null) {
                 $stored[] = $row;
+                $this->changeLog->record('testimonial', $testimonialId, 'image_added', ['filename' => $names['filename']], $this->user->id());
             }
         }
         return $stored;
@@ -61,6 +64,7 @@ final class ImageService
         if ($row === null) {
             throw new NotFoundException("Image $imageId not found");
         }
+        $this->changeLog->record('testimonial', $row['testimonial_id'], 'image_removed', ['filename' => $row['filename']], $this->user->id());
         $this->images->delete($imageId);
         $this->storage->delete($row['filename'], $row['thumb_filename']);
     }

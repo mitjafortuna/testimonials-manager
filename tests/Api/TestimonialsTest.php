@@ -124,4 +124,27 @@ final class TestimonialsTest extends ApiTestCase
         $r = $this->request('POST', '/api/landings/61763/testimonials/bulk', ['ids' => [1], 'action' => 'nope']);
         self::assertSame(422, $r['status']);
     }
+
+    public function testHistoryRecordsCreateUpdateAndImageEvents(): void
+    {
+        $t = $this->request('POST', '/api/landings/61763/testimonials', ['author_name' => 'Hist', 'text' => 'orig'])['json']['testimonial'];
+        $this->request('PATCH', "/api/testimonials/{$t['id']}", ['text' => 'changed']);
+
+        $r = $this->request('GET', "/api/testimonials/{$t['id']}/history");
+        self::assertSame(200, $r['status']);
+        $actions = array_column($r['json']['data'], 'action');
+        self::assertSame(['updated', 'created'], $actions);   // newest first
+        $updated = $r['json']['data'][0];
+        // assertEquals, not assertSame: MySQL's JSON column type does not preserve object key
+        // insertion order, so 'old'/'new' may round-trip in a different order.
+        self::assertEquals(['old' => 'orig', 'new' => 'changed'], $updated['changes']['text']);
+        self::assertSame('Demo Admin', $updated['user_name']);
+
+        $this->request('DELETE', "/api/testimonials/{$t['id']}");
+    }
+
+    public function testHistoryOnMissingTestimonialIs404(): void
+    {
+        self::assertSame(404, $this->request('GET', '/api/testimonials/999999999/history')['status']);
+    }
 }

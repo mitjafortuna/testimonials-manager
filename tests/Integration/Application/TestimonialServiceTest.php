@@ -10,6 +10,7 @@ use App\Domain\Exception\NotFoundException;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Testimonial\RatingResolver;
 use App\Domain\Testimonial\TestimonialValidator;
+use App\Infrastructure\Repository\ChangeLogRepository;
 use App\Infrastructure\Repository\ImageRepository;
 use App\Infrastructure\Repository\LandingRepository;
 use App\Infrastructure\Repository\TestimonialRepository;
@@ -60,6 +61,7 @@ final class TestimonialServiceTest extends DatabaseTestCase
             new TestimonialValidator(),
             new RatingResolver(fn () => 3),
             $user,
+            new ChangeLogRepository(self::$pdo),
         );
     }
 
