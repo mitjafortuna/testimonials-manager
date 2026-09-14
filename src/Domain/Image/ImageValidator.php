@@ -30,6 +30,14 @@ final class ImageValidator
         if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] <= 0 || !is_file($file['tmp_name'])) {
             throw new ValidationException(['images' => 'Upload failed (error ' . $file['error'] . ')']);
         }
+        // is_uploaded_file() is a defense-in-depth guard against ever processing an arbitrary filesystem
+        // path as if it were an upload. It only reports true for genuine PHP-managed upload temp files, which
+        // means it is also always false in a plain CLI SAPI (unit tests build fixture files with tempnam(),
+        // not real $_FILES uploads) — so the check is skipped there and enforced under every real request SAPI,
+        // built-in server ("cli-server", used by the API test suite) included.
+        if (\PHP_SAPI !== 'cli' && !is_uploaded_file($file['tmp_name'])) {
+            throw new ValidationException(['images' => 'Upload failed (not a valid upload)']);
+        }
         $mime = (string) (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
         $info = @getimagesize($file['tmp_name']);
         if (!isset(self::ALLOWED[$mime]) || $info === false || $info['mime'] !== $mime) {

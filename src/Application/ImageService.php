@@ -40,6 +40,9 @@ final class ImageService
         if ($files === []) {
             throw new ValidationException(['images' => 'Choose at least one image']);
         }
+        if ($crop !== null && $crop !== 'square') {
+            throw new ValidationException(['crop' => 'Must be "square" or omitted']);
+        }
         // Validate everything first so a bad file rejects the whole batch before anything is written.
         $checked = array_map(fn (array $f) => $this->validator->validate($f), $files);
         $stored = [];

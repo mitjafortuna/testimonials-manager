@@ -49,7 +49,18 @@ See [deploy/README.md](deploy/README.md) for hosting on Fly.io: two apps (`tm-df
 
 ## Architecture
 
-See [docs/superpowers/specs/2026-09-13-testimonials-manager-design.md](docs/superpowers/specs/2026-09-13-testimonials-manager-design.md) for the full design and [docs/adr](docs/adr) for individual decisions. Sections on the schema, API, shortcuts and time spent are filled in as phases land.
+See [docs/adr](docs/adr) for individual architecture decisions. Sections on the schema, API, shortcuts and time spent are filled in as phases land.
+
+## Bonus features
+
+Built on top of the core assignment brief:
+
+- **AI mock providers.** `POST /api/testimonials/{id}/ai/translate` and `.../ai/suggest-name` run against one of three mock providers (selectable per request), used to translate testimonial text and suggest an author display name/gender. The providers are mocks (no real HTTP calls out) but implement the same interface a real provider would.
+- **Drag-and-drop reorder.** Testimonials within a country landing, and images within a testimonial, can be reordered by dragging in the admin UI; the new order is persisted via a dedicated reorder endpoint per resource.
+- **Copy testimonials between countries.** A country landing's testimonials can be copied onto another country's landing, in either replace mode (clears the destination first) or append mode, with a preview step before committing.
+- **Bulk actions.** Multiple testimonials can be selected at once in the list view and activated, deactivated, or deleted together.
+- **Change log / audit trail.** Each testimonial has a history panel showing who created/updated/deleted it and when, plus image add/remove events (see the scope note under "Deliberate shortcuts").
+- **Image processing.** Uploads are downscaled to a sane maximum dimension automatically; conversion to WebP and cropping to a square are both opt-in per upload.
 
 ## Deliberate shortcuts
 
@@ -74,6 +85,7 @@ Filled in as phases land. Known so far:
 - Bulk delete (phase 13) is not transactional across the selected ids — a failure partway through can leave a partial delete.
 - The AI providers (phase 10) are mocks: `translate()` only tags text with `[CC]`, and all three providers produce byte-identical translations (only their `authorName()` sample pools and `name()` differ) — swapping in real HTTP-backed providers later only touches `AbstractMockProvider`'s subclasses.
 - Image "WebP conversion" and "crop to square" (phase 15) are opt-in per upload, not applied retroactively to already-stored images.
+- The change-log audit trail only covers single-record testimonial create/update/delete and image add/remove; bulk actions, copy-between-countries, and reorder mutate data directly and do not write audit entries.
 - `ImageStorage::store()` (phase 15) always decodes and re-encodes the main uploaded image via GD to enforce a 1600px maximum dimension, even when no crop/WebP-conversion/downscaling is actually necessary — previously the original bytes passed through untouched. For uploads that didn't need any processing this means: JPEGs get re-encoded at a fixed quality setting (may differ slightly from the original encoding); EXIF metadata (e.g. camera orientation tags) is dropped since GD doesn't preserve it; an animated WebP upload would lose its animation and become a static single frame.
 
 ## How this was built
