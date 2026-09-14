@@ -11,14 +11,37 @@ abstract class ApiTestCase extends TestCase
 {
     private string $cookieJar;
 
+    /** @var array<string,bool> */
+    private static array $loggedIn = [];
+
     protected function setUp(): void
     {
         $this->cookieJar = sys_get_temp_dir() . '/tm-cookies-' . str_replace('\\', '_', static::class) . '.txt';
+        if (empty(self::$loggedIn[static::class])) {
+            $this->login();
+            self::$loggedIn[static::class] = true;
+        }
     }
 
     protected function cookieJarPath(): string
     {
         return $this->cookieJar;
+    }
+
+    /** @return array<string,mixed> */
+    protected function login(string $username = 'admin', string $password = 'admin123'): array
+    {
+        $r = $this->request('POST', '/api/auth/login', ['username' => $username, 'password' => $password]);
+        if ($r['status'] !== 200) {
+            self::fail('login failed: ' . json_encode($r['json']));
+        }
+        return $r['json']['user'];
+    }
+
+    protected function logout(): void
+    {
+        @unlink($this->cookieJar);
+        self::$loggedIn[static::class] = false;
     }
 
     protected function baseUrl(): string
