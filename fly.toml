@@ -1,0 +1,40 @@
+app = "tm-dfvu"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[deploy]
+  release_command = "php bin/install.php"
+
+[env]
+  APP_ENV = "prod"
+  APP_DEBUG = "0"
+  UPLOAD_DIR = "/var/www/storage/uploads"
+  SESSION_NAME = "tm_session"
+  DB_PORT = "3306"
+  DB_NAME = "testimonials"
+  DB_USER = "app"
+  LANDINGS_API_URL = "https://develop.s-mania.com/it/testimonials/landings-api.php"
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "20s"
+  method = "GET"
+  path = "/api/health"
+
+[[mounts]]
+  source = "uploads"
+  destination = "/var/www/storage/uploads"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

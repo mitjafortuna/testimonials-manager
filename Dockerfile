@@ -18,7 +18,7 @@ RUN composer install ${COMPOSER_FLAGS} --no-interaction --no-progress --no-scrip
 
 COPY . .
 RUN composer dump-autoload --optimize \
- && mkdir -p storage/uploads \
- && chown -R www-data:www-data storage
+ && mkdir -p storage/uploads /var/lib/php/sessions \
+ && chown -R www-data:www-data storage /var/lib/php/sessions
 
 EXPOSE 80
