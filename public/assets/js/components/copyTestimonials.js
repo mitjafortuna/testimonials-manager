@@ -37,7 +37,7 @@
 
       let landings;
       try {
-        landings = (await Api.get(`/api/products/${encodeURIComponent(sku)}/landings`)).data.filter((l) => l.id !== landingId);
+        landings = (await Api.get(`/api/products/${encodeURIComponent(sku)}/landings`)).data.filter((l) => String(l.id) !== String(landingId));
       } catch (err) {
         select.innerHTML = '';
         preview.textContent = 'Could not load landings: ' + err.message;
