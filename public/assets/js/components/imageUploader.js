@@ -22,17 +22,25 @@
           <i class="bi bi-cloud-arrow-up fs-3 d-block"></i><span>Drop images here or <u>choose files</u></span>
           <input type="file" id="iu-input" accept="image/jpeg,image/png,image/webp" multiple hidden>
         </div>
+        <div class="d-flex gap-3 mt-1 small">
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="iu-webp"><label class="form-check-label" for="iu-webp">Convert to WebP</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="iu-crop"><label class="form-check-label" for="iu-crop">Crop to square</label></div>
+        </div>
         <div class="d-flex align-items-center gap-2 mt-1"><span id="iu-status" class="tm-save-status"></span></div>`;
       const grid = slot.querySelector('#iu-grid');
       const drop = slot.querySelector('#iu-drop');
       const input = slot.querySelector('#iu-input');
       const status = SaveStatus.bind(slot.querySelector('#iu-status'));
+      const webpCheckbox = slot.querySelector('#iu-webp');
+      const cropCheckbox = slot.querySelector('#iu-crop');
 
       async function send(fileList) {
         const files = [...fileList];
         if (!files.length) return;
         const fd = new FormData();
         files.forEach((f) => fd.append('images[]', f, f.name));
+        if (webpCheckbox.checked) fd.append('convert_webp', '1');
+        if (cropCheckbox.checked) fd.append('crop', 'square');
         status.saving();
         try {
           const res = await Api.upload(`/api/testimonials/${testimonial.id}/images`, fd);
