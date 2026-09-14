@@ -19,3 +19,4 @@ Rough time spent per phase (owner + AI pairing). Requested by the assignment bri
 | 10 | AI mock providers (translate, suggest name) | 2h |
 | 11 | Drag & drop reorder (testimonials, images) | 2h |
 | 12 | Copy testimonials between countries (replace/append, preview) | 2.5h |
+| 13 | Bulk actions (select, activate/deactivate/delete) | 1.5h |

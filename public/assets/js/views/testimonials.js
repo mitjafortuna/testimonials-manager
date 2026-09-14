@@ -34,6 +34,7 @@
     return `
       <tr data-id="${t.id}" ${inherited ? '' : 'draggable="true"'}>
         <td class="tm-drag-handle text-muted" title="${inherited ? '' : 'Drag to reorder'}">${inherited ? '' : '<i class="bi bi-grip-vertical"></i>'}</td>
+        <td><input type="checkbox" class="form-check-input tm-select" ${inherited ? 'disabled' : ''} aria-label="Select"></td>
         <td class="text-muted tabular">${t.sort_order}</td>
         <td><i class="bi ${genderIcon(t.gender)} me-1 text-muted"></i>${esc(t.author_name)}${t.url ? ` <a href="${esc(t.url)}" target="_blank" rel="noopener" title="${esc(t.url)}"><i class="bi bi-box-arrow-up-right small"></i></a>` : ''}</td>
         <td class="tm-text" title="${esc(t.text)}">${esc(t.text)}</td>
@@ -45,6 +46,43 @@
           <button class="btn btn-sm btn-outline-danger tm-delete" ${inherited ? 'disabled' : ''}><i class="bi bi-trash"></i></button>
         </td>
       </tr>`;
+  }
+
+  function wireBulkToolbar(landingId, reload) {
+    function updateToolbar() {
+      const checked = [...document.querySelectorAll('.tm-select:checked')];
+      const toolbar = document.getElementById('bulk-toolbar');
+      if (!checked.length) { toolbar.classList.add('d-none'); toolbar.innerHTML = ''; return; }
+      toolbar.classList.remove('d-none');
+      toolbar.innerHTML = `<strong>${checked.length}</strong> selected
+        <button class="btn btn-sm btn-outline-success" id="bulk-activate">Activate</button>
+        <button class="btn btn-sm btn-outline-secondary" id="bulk-deactivate">Deactivate</button>
+        <button class="btn btn-sm btn-outline-danger ms-auto" id="bulk-delete">Delete</button>`;
+      const ids = () => [...document.querySelectorAll('.tm-select:checked')].map((c) => parseInt(c.closest('tr').dataset.id, 10));
+      const run = async (action) => {
+        try {
+          await Api.post(`/api/landings/${landingId}/testimonials/bulk`, { ids: ids(), action });
+          Toast.success('Updated');
+          reload();
+        } catch (err) {
+          Toast.error('Could not update: ' + err.message);
+        }
+      };
+      document.getElementById('bulk-activate').addEventListener('click', () => run('activate'));
+      document.getElementById('bulk-deactivate').addEventListener('click', () => run('deactivate'));
+      document.getElementById('bulk-delete').addEventListener('click', async () => {
+        const ok = await Confirm.ask({ title: 'Delete testimonials', body: `Delete ${checked.length} testimonial(s)? This cannot be undone.`, confirmLabel: 'Delete' });
+        if (ok) run('delete');
+      });
+    }
+    document.getElementById('testimonials-table').addEventListener('change', (e) => {
+      if (e.target.id === 'tm-select-all') {
+        document.querySelectorAll('.tm-select:not(:disabled)').forEach((c) => { c.checked = e.target.checked; });
+        updateToolbar();
+      } else if (e.target.classList.contains('tm-select')) {
+        updateToolbar();
+      }
+    });
   }
 
   window.Views.testimonials = async function (params) {
@@ -70,10 +108,11 @@
         <button class="btn btn-primary" id="add-testimonial"><i class="bi bi-plus-lg me-1"></i>Add testimonial</button>
         <button class="btn btn-outline-primary" id="copy-testimonials"><i class="bi bi-files me-1"></i>Copy…</button>
       </div>
+      <div id="bulk-toolbar" class="alert alert-secondary d-none d-flex align-items-center gap-2 py-2 mb-3"></div>
       ${inherited ? `<div class="alert alert-warning d-flex align-items-center gap-2"><i class="bi bi-info-circle-fill"></i><div><strong>Inherited from the English master.</strong> This landing has no testimonials of its own, so the EN set below is what visitors see. Add a testimonial here to start a local set.</div></div>` : ''}
       <div class="card"><div class="table-responsive"><table class="table table-hover align-middle mb-0" id="testimonials-table">
-        <thead><tr><th></th><th>#</th><th>Author</th><th>Text</th><th>Rating</th><th>Images</th><th>Active</th><th></th></tr></thead>
-        <tbody>${res.data.map((t) => row(t, inherited)).join('') || '<tr><td colspan="8" class="text-muted text-center py-4">No testimonials yet.</td></tr>'}</tbody>
+        <thead><tr><th></th><th><input type="checkbox" class="form-check-input" id="tm-select-all" aria-label="Select all"></th><th>#</th><th>Author</th><th>Text</th><th>Rating</th><th>Images</th><th>Active</th><th></th></tr></thead>
+        <tbody>${res.data.map((t) => row(t, inherited)).join('') || '<tr><td colspan="9" class="text-muted text-center py-4">No testimonials yet.</td></tr>'}</tbody>
       </table></div></div>`;
 
     const reload = () => Router.navigate(`#/landings/${landingId}`);
@@ -131,5 +170,7 @@
         Toast.success('Order saved');
       });
     }
+
+    wireBulkToolbar(landingId, reload);
   };
 })();
