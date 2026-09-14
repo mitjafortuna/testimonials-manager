@@ -51,6 +51,24 @@ final class TestimonialController
         return Response::json($this->service->reorder(self::id($request, 'id'), array_map('intval', $raw)));
     }
 
+    public function copyPreview(Request $request): Response
+    {
+        return Response::json($this->service->copyPreview(
+            self::id($request, 'id'),
+            (int) $request->query('source_landing_id', 0),
+            (string) $request->query('mode', 'append'),
+        ));
+    }
+
+    public function copy(Request $request): Response
+    {
+        return Response::json($this->service->copy(
+            self::id($request, 'id'),
+            (int) $request->input('source_landing_id', 0),
+            (string) $request->input('mode', 'append'),
+        ));
+    }
+
     /** Route ids must be positive integers; anything else is a 404, not a 500. */
     public static function id(Request $request, string $name): int
     {

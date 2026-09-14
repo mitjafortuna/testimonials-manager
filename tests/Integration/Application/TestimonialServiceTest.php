@@ -171,4 +171,52 @@ final class TestimonialServiceTest extends DatabaseTestCase
         $res = $this->svc->reorder(1, [$t2['id'], $t1['id']]);
         self::assertSame([$t2['id'], $t1['id']], array_column($res['data'], 'id'));
     }
+
+    public function testCopyPreviewAndCopyAppend(): void
+    {
+        $this->svc->create(1, ['author_name' => 'EN one', 'text' => 'T']);
+        $this->svc->create(1, ['author_name' => 'EN two', 'text' => 'T']);
+        $this->svc->create(2, ['author_name' => 'SI existing', 'text' => 'T']);
+
+        $preview = $this->svc->copyPreview(2, 1, 'append');
+        self::assertSame('EN', $preview['source']['country']);
+        self::assertSame(2, $preview['will_add']);
+        self::assertSame(0, $preview['will_remove']);
+
+        $res = $this->svc->copy(2, 1, 'append');
+        self::assertSame(['SI existing', 'EN one', 'EN two'], array_column($res['data'], 'author_name'));
+    }
+
+    public function testCopyReplaceRemovesExistingAndTheirImages(): void
+    {
+        $this->svc->create(1, ['author_name' => 'EN one', 'text' => 'T']);
+        $old = $this->svc->create(2, ['author_name' => 'SI old', 'text' => 'T']);
+        $names = $this->imageStorage->store(ImageFixtures::png(sys_get_temp_dir()), 'png');
+        $this->imageRepo->insert($old['id'], [
+            'filename' => $names['filename'], 'thumb_filename' => $names['thumb_filename'],
+            'mime' => 'image/png', 'size_bytes' => 100, 'width' => 10, 'height' => 10,
+        ], null);
+
+        $this->svc->copy(2, 1, 'replace');
+
+        self::assertFileDoesNotExist($this->imageStorage->path($names['filename']));
+        $res = $this->svc->listForLanding(2);
+        self::assertSame(['EN one'], array_column($res['data'], 'author_name'));
+    }
+
+    public function testCopyRejectsSameLandingAndBadMode(): void
+    {
+        try {
+            $this->svc->copy(1, 1, 'append');
+            self::fail('expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertArrayHasKey('source_landing_id', $e->getFields());
+        }
+        try {
+            $this->svc->copy(2, 1, 'overwrite');
+            self::fail('expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertArrayHasKey('mode', $e->getFields());
+        }
+    }
 }
