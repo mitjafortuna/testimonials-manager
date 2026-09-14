@@ -95,4 +95,27 @@ final class TestimonialRepositoryTest extends DatabaseTestCase
         self::assertSame([$c, $a, $b], array_column($rows, 'id'));
         self::assertSame([0, 1, 2], array_column($rows, 'sort_order'));
     }
+
+    public function testReplaceOrAppend(): void
+    {
+        $repo = new TestimonialRepository(self::$pdo);
+        $p = self::insert('products', ['parent_sku' => 'copy-sku', 'title' => 'T']);
+        self::insert('landings', ['id' => 601, 'product_id' => $p, 'country' => 'EN', 'is_master' => 1, 'url' => 'u', 'title' => 'T', 'last_synced_at' => '2026-01-01 00:00:00']);
+        self::insert('landings', ['id' => 602, 'product_id' => $p, 'country' => 'SI', 'is_master' => 0, 'url' => 'u', 'title' => 'T', 'last_synced_at' => '2026-01-01 00:00:00']);
+        $src = 601;
+        $dst = 602;
+        $repo->insert($src, ['author_name' => 'A', 'text' => 'a', 'rating' => null, 'gender' => 'unisex', 'url' => null, 'is_active' => true, 'sort_order' => null], null);
+        $repo->insert($src, ['author_name' => 'B', 'text' => 'b', 'rating' => null, 'gender' => 'unisex', 'url' => null, 'is_active' => true, 'sort_order' => null], null);
+        $existing = $repo->insert($dst, ['author_name' => 'Old', 'text' => 'old', 'rating' => null, 'gender' => 'unisex', 'url' => null, 'is_active' => true, 'sort_order' => null], null);
+
+        $repo->replaceOrAppend($dst, $repo->listByLanding($src), true, $this->userId);
+        $rows = $repo->listByLanding($dst);
+        self::assertSame(['A', 'B'], array_column($rows, 'author_name'));
+        self::assertNull($repo->find($existing));
+        self::assertSame([0, 1], array_column($rows, 'sort_order'));
+        self::assertSame($this->userId, $rows[0]['created_by']);
+
+        $repo->replaceOrAppend($dst, $repo->listByLanding($src), false, null);
+        self::assertSame(4, $repo->countByLanding($dst));
+    }
 }

@@ -130,6 +130,58 @@ final class TestimonialService
         return $row + ['rating_display' => $this->ratings->display($row['rating']), 'images' => $images];
     }
 
+    /** @return array{source: array{id:int,country:string,title:string}, mode:string, will_add:int, will_remove:int, items: list<array{author_name:string,text:string}>} */
+    public function copyPreview(int $targetLandingId, int $sourceLandingId, string $mode): array
+    {
+        [, $source] = $this->copySources($targetLandingId, $sourceLandingId, $mode);
+        $sourceRows = $this->testimonials->listByLanding($sourceLandingId);
+        return [
+            'source' => ['id' => (int) $source['id'], 'country' => (string) $source['country'], 'title' => (string) $source['title']],
+            'mode' => $mode,
+            'will_add' => count($sourceRows),
+            'will_remove' => $mode === 'replace' ? $this->testimonials->countByLanding($targetLandingId) : 0,
+            'items' => array_map(fn (array $r) => ['author_name' => $r['author_name'], 'text' => $r['text']], $sourceRows),
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    public function copy(int $targetLandingId, int $sourceLandingId, string $mode): array
+    {
+        $this->copySources($targetLandingId, $sourceLandingId, $mode);
+        if ($mode === 'replace') {
+            $existing = $this->testimonials->listByLanding($targetLandingId);
+            $images = $this->images->listByTestimonialIds(array_column($existing, 'id'));
+            foreach ($existing as $row) {
+                foreach ($images[$row['id']] ?? [] as $image) {
+                    $this->imageStorage->delete($image['filename'], $image['thumb_filename']);
+                }
+            }
+        }
+        $sourceRows = $this->testimonials->listByLanding($sourceLandingId);
+        $this->testimonials->replaceOrAppend($targetLandingId, $sourceRows, $mode === 'replace', $this->user->id());
+        return $this->listForLanding($targetLandingId);
+    }
+
+    /** @return array{0: array<string,mixed>, 1: array<string,mixed>} [$target, $source] */
+    private function copySources(int $targetLandingId, int $sourceLandingId, string $mode): array
+    {
+        if (!in_array($mode, ['replace', 'append'], true)) {
+            throw new ValidationException(['mode' => 'Must be "replace" or "append"']);
+        }
+        if ($sourceLandingId === $targetLandingId) {
+            throw new ValidationException(['source_landing_id' => 'Source and target must be different landings']);
+        }
+        $target = $this->activeLanding($targetLandingId);
+        $source = $this->landings->find($sourceLandingId);
+        if ($source === null || $source['removed_at'] !== null) {
+            throw new NotFoundException("Landing $sourceLandingId not found");
+        }
+        if ((int) $source['product_id'] !== (int) $target['product_id']) {
+            throw new ValidationException(['source_landing_id' => 'Source must belong to the same product']);
+        }
+        return [$target, $source];
+    }
+
     /** @return Row */
     private function existing(int $id): array
     {

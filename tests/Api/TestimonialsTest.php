@@ -86,4 +86,18 @@ final class TestimonialsTest extends ApiTestCase
         self::assertSame(422, $r['status']);
         self::assertArrayHasKey('ids', $r['json']['error']['fields']);
     }
+
+    public function testCopyPreviewAndCopy(): void
+    {
+        $landings = $this->request('GET', '/api/products/abforge/landings')['json']['data'];
+        $target = array_values(array_filter($landings, fn ($l) => !$l['is_master']))[0];
+
+        $preview = $this->request('GET', "/api/landings/{$target['id']}/testimonials/copy-preview?source_landing_id=61763&mode=append");
+        self::assertSame(200, $preview['status']);
+        self::assertSame('EN', $preview['json']['source']['country']);
+
+        $r = $this->request('POST', "/api/landings/{$target['id']}/testimonials/copy", ['source_landing_id' => 61763, 'mode' => 'append']);
+        self::assertSame(200, $r['status']);
+        self::assertGreaterThan(0, count($r['json']['data']));
+    }
 }

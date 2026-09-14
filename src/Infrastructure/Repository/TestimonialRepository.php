@@ -110,6 +110,34 @@ final class TestimonialRepository
         }
     }
 
+    /** @param list<Row> $sourceRows */
+    public function replaceOrAppend(int $targetLandingId, array $sourceRows, bool $replace, ?int $userId): void
+    {
+        $this->pdo->beginTransaction();
+        try {
+            if ($replace) {
+                $this->pdo->prepare('DELETE FROM testimonials WHERE landing_id = ?')->execute([$targetLandingId]);
+            }
+            $next = $replace ? 0 : $this->nextSortOrder($targetLandingId);
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO testimonials (landing_id, author_name, text, rating, gender, url, is_active, sort_order, created_by, updated_by)
+                 VALUES (:landing_id, :author_name, :text, :rating, :gender, :url, :is_active, :sort_order, :created_by, :updated_by)',
+            );
+            foreach ($sourceRows as $i => $row) {
+                $stmt->execute([
+                    'landing_id' => $targetLandingId, 'author_name' => $row['author_name'], 'text' => $row['text'],
+                    'rating' => $row['rating'], 'gender' => $row['gender'], 'url' => $row['url'],
+                    'is_active' => (int) $row['is_active'], 'sort_order' => $next + $i,
+                    'created_by' => $userId, 'updated_by' => $userId,
+                ]);
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
     /**
      * @param array<string,mixed> $r
      * @return Row
