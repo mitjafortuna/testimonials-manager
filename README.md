@@ -65,6 +65,16 @@ Filled in as phases land. Known so far:
 - Media will be served through a PHP passthrough (`GET /media/{filename}`) rather than directly by Apache, once the images phase lands — portability (works the same under XAMPP, Docker, Fly) over raw static-file throughput.
 - Product/landing counts are computed per request rather than cached/denormalised — simpler and correct-by-construction; revisit only if the counts query shows up as a bottleneck.
 - Product and country counters include inactive testimonials — the admin wants to see everything that exists, not only what is currently shown.
+- SKU is derived from the landing URL's last path segment (works for the current upstream URL shape; brittle if it changes).
+- `ImageService::upload()` is not transactional across a multi-file batch (validation-first makes this reachable only on a disk/GD failure mid-batch).
+- `ImageRepository::insert()`'s `sort_order` allocation (`SELECT MAX+1` then `INSERT`) isn't atomic under concurrent uploads to the same testimonial.
+- No login rate-limiting/throttling; `session.use_strict_mode` isn't set (session-fixation is still covered by `session_regenerate_id()` on login).
+- `database/seed-images.php` always writes JPEG bytes regardless of the target filename's extension (safe today because every seeded row's filename ends `.jpg`).
+- Copying testimonials between countries (phase 12) copies testimonial fields only, not their images — a copied testimonial starts with zero images.
+- Bulk delete (phase 13) is not transactional across the selected ids — a failure partway through can leave a partial delete.
+- The AI providers (phase 10) are mocks: `translate()` only tags text with `[CC]`, and all three providers produce byte-identical translations (only their `authorName()` sample pools and `name()` differ) — swapping in real HTTP-backed providers later only touches `AbstractMockProvider`'s subclasses.
+- Image "WebP conversion" and "crop to square" (phase 15) are opt-in per upload, not applied retroactively to already-stored images.
+- `ImageStorage::store()` (phase 15) always decodes and re-encodes the main uploaded image via GD to enforce a 1600px maximum dimension, even when no crop/WebP-conversion/downscaling is actually necessary — previously the original bytes passed through untouched. For uploads that didn't need any processing this means: JPEGs get re-encoded at a fixed quality setting (may differ slightly from the original encoding); EXIF metadata (e.g. camera orientation tags) is dropped since GD doesn't preserve it; an animated WebP upload would lose its animation and become a static single frame.
 
 ## How this was built
 
