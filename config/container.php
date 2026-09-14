@@ -33,6 +33,7 @@ use App\Http\Middleware\RequireXhrMiddleware;
 use App\Http\Router;
 use App\Infrastructure\Auth\SessionAuth;
 use App\Infrastructure\Db\PdoFactory;
+use App\Infrastructure\Repository\ChangeLogRepository;
 use App\Infrastructure\Repository\ImageRepository;
 use App\Infrastructure\Repository\LandingRepository;
 use App\Infrastructure\Repository\ProductRepository;
@@ -106,6 +107,7 @@ return static function (array $config): Container {
     $c->set(ImageRepository::class, fn (Container $c) => new ImageRepository($c->get(PDO::class)));
     $c->set(ImageValidator::class, fn () => new ImageValidator((int) $config['upload']['max_bytes']));
     $c->set(ImageStorage::class, fn () => new ImageStorage($config['upload']['dir']));
+    $c->set(ChangeLogRepository::class, fn (Container $c) => new ChangeLogRepository($c->get(PDO::class)));
     $c->set(TestimonialService::class, fn (Container $c) => new TestimonialService(
         $c->get(TestimonialRepository::class),
         $c->get(LandingRepository::class),
@@ -114,6 +116,7 @@ return static function (array $config): Container {
         $c->get(TestimonialValidator::class),
         $c->get(RatingResolver::class),
         $c->get(CurrentUser::class),
+        $c->get(ChangeLogRepository::class),
     ));
     $c->set(TestimonialController::class, fn (Container $c) => new TestimonialController($c->get(TestimonialService::class)));
 
@@ -123,6 +126,7 @@ return static function (array $config): Container {
         $c->get(ImageValidator::class),
         $c->get(ImageStorage::class),
         $c->get(CurrentUser::class),
+        $c->get(ChangeLogRepository::class),
     ));
     $c->set(ImageController::class, fn (Container $c) => new ImageController($c->get(ImageService::class)));
     $c->set(MediaController::class, fn (Container $c) => new MediaController($c->get(ImageStorage::class)));

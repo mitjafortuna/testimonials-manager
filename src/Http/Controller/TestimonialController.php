@@ -78,6 +78,11 @@ final class TestimonialController
         ));
     }
 
+    public function history(Request $request): Response
+    {
+        return Response::json(['data' => $this->service->history(self::id($request, 'id'))]);
+    }
+
     /** Route ids must be positive integers; anything else is a 404, not a 500. */
     public static function id(Request $request, string $name): int
     {

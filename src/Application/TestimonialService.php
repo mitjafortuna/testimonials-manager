@@ -9,6 +9,7 @@ use App\Domain\Exception\NotFoundException;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Testimonial\RatingResolver;
 use App\Domain\Testimonial\TestimonialValidator;
+use App\Infrastructure\Repository\ChangeLogRepository;
 use App\Infrastructure\Repository\ImageRepository;
 use App\Infrastructure\Repository\LandingRepository;
 use App\Infrastructure\Repository\TestimonialRepository;
@@ -30,6 +31,7 @@ final class TestimonialService
         private readonly TestimonialValidator $validator,
         private readonly RatingResolver $ratings,
         private readonly CurrentUser $user,
+        private readonly ChangeLogRepository $changeLog,
     ) {
     }
 
@@ -69,6 +71,13 @@ final class TestimonialService
         return $this->present($row, $this->images->listByTestimonialIds([$id])[$id] ?? []);
     }
 
+    /** @return list<array<string,mixed>> */
+    public function history(int $id): array
+    {
+        $this->existing($id);
+        return $this->changeLog->listForEntity('testimonial', $id);
+    }
+
     /**
      * @param array<string,mixed> $input
      * @return array<string,mixed>
@@ -78,6 +87,7 @@ final class TestimonialService
         $this->activeLanding($landingId);
         $fields = $this->validator->validate($input);
         $id = $this->testimonials->insert($landingId, $fields, $this->user->id());
+        $this->changeLog->record('testimonial', $id, 'created', $fields, $this->user->id());
         return $this->get($id);
     }
 
@@ -87,9 +97,18 @@ final class TestimonialService
      */
     public function update(int $id, array $input): array
     {
-        $this->existing($id);
+        $before = $this->existing($id);
         $fields = $this->validator->validate($input, true);
         $this->testimonials->update($id, $fields, $this->user->id());
+        $diff = [];
+        foreach ($fields as $key => $value) {
+            if ($before[$key] !== $value) {
+                $diff[$key] = ['old' => $before[$key], 'new' => $value];
+            }
+        }
+        if ($diff !== []) {
+            $this->changeLog->record('testimonial', $id, 'updated', $diff, $this->user->id());
+        }
         return $this->get($id);
     }
 
@@ -100,6 +119,7 @@ final class TestimonialService
         foreach ($images as $image) {
             $this->imageStorage->delete($image['filename'], $image['thumb_filename']);
         }
+        $this->changeLog->record('testimonial', $id, 'deleted', null, $this->user->id());
         $this->testimonials->delete($id);
     }
 
