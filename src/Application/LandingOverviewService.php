@@ -20,16 +20,18 @@ final class LandingOverviewService
         if ($rows === []) {
             throw new NotFoundException("Product '$sku' not found");
         }
+        $hasMaster = false;
         $masterCount = 0;
         foreach ($rows as $row) {
             if ($row['is_master']) {
+                $hasMaster = true;
                 $masterCount = $row['testimonial_count'];
                 break;
             }
         }
         $data = [];
         foreach ($rows as $row) {
-            $inherits = !$row['is_master'] && $row['testimonial_count'] === 0;
+            $inherits = !$row['is_master'] && $row['testimonial_count'] === 0 && $hasMaster;
             $data[] = $row + ['inherits_from_master' => $inherits, 'inherited_count' => $inherits ? $masterCount : 0];
         }
         return ['data' => $data];
