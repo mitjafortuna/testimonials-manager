@@ -94,6 +94,22 @@ final class TestimonialRepository
         return $stmt->rowCount() === 1;
     }
 
+    /** @param list<int> $ids  full ordered set of every testimonial id belonging to $landingId */
+    public function reorder(int $landingId, array $ids): void
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare('UPDATE testimonials SET sort_order = ? WHERE id = ? AND landing_id = ?');
+            foreach ($ids as $i => $id) {
+                $stmt->execute([$i, $id, $landingId]);
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
     /**
      * @param array<string,mixed> $r
      * @return Row
