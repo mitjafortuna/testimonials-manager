@@ -68,6 +68,7 @@
       <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
         <div><h1 class="h3 mb-1"><span class="tm-country-code me-2">${esc(L.country)}</span>${esc(L.title)}</h1><a class="small" href="${esc(L.url)}" target="_blank" rel="noopener">${esc(L.url)}</a></div>
         <button class="btn btn-primary" id="add-testimonial"><i class="bi bi-plus-lg me-1"></i>Add testimonial</button>
+        <button class="btn btn-outline-primary" id="copy-testimonials"><i class="bi bi-files me-1"></i>Copy…</button>
       </div>
       ${inherited ? `<div class="alert alert-warning d-flex align-items-center gap-2"><i class="bi bi-info-circle-fill"></i><div><strong>Inherited from the English master.</strong> This landing has no testimonials of its own, so the EN set below is what visitors see. Add a testimonial here to start a local set.</div></div>` : ''}
       <div class="card"><div class="table-responsive"><table class="table table-hover align-middle mb-0" id="testimonials-table">
@@ -78,6 +79,8 @@
     const reload = () => Router.navigate(`#/landings/${landingId}`);
     document.getElementById('add-testimonial').addEventListener('click', () =>
       TestimonialForm.open({ landingId, country: L.country, testimonial: null, onSaved: reload }));
+    document.getElementById('copy-testimonials').addEventListener('click', () =>
+      CopyTestimonials.open({ landingId, sku, onCopied: reload }));
 
     const byId = Object.fromEntries(res.data.map((t) => [t.id, t]));
     document.getElementById('testimonials-table').addEventListener('click', async (e) => {

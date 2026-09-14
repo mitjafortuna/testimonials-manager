@@ -18,3 +18,4 @@ Rough time spent per phase (owner + AI pairing). Requested by the assignment bri
 | 9 | Fly.io deploy (MySQL app, volumes, release command, CD workflow) | 2h |
 | 10 | AI mock providers (translate, suggest name) | 2h |
 | 11 | Drag & drop reorder (testimonials, images) | 2h |
+| 12 | Copy testimonials between countries (replace/append, preview) | 2.5h |
