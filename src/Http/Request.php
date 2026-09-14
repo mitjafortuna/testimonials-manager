@@ -33,6 +33,7 @@ final class Request
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $path = self::stripBasePath($path, $_SERVER['SCRIPT_NAME'] ?? '');
         $headers = [];
         foreach ($_SERVER as $k => $v) {
             if (str_starts_with($k, 'HTTP_')) {
@@ -50,6 +51,20 @@ final class Request
             $body = is_array($decoded) ? $decoded : [];
         }
         return new self($method, $path, $_GET, $body, $headers, $_FILES, $_COOKIE);
+    }
+
+    /**
+     * Strips the deployment base path (the directory the front controller lives in) from the
+     * request path, so routing works whether the app is served from a vhost root (SCRIPT_NAME
+     * "/index.php") or a sub-folder install, e.g. XAMPP htdocs (SCRIPT_NAME "/sub/public/index.php").
+     */
+    private static function stripBasePath(string $path, string $scriptName): string
+    {
+        $base = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+        if ($base !== '' && str_starts_with($path, $base)) {
+            $path = substr($path, strlen($base));
+        }
+        return $path === '' ? '/' : $path;
     }
 
     public function header(string $name): ?string

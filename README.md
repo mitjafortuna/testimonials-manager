@@ -16,10 +16,16 @@ open http://localhost:8080
 
 ## Run on XAMPP / LAMP
 
-1. Point the vhost DocumentRoot at `public/` (or copy the project into `htdocs/testimonials-manager` and open `/testimonials-manager/public/`).
-2. Copy `.env.example` to `.env`; set `DB_HOST=127.0.0.1` and your MySQL credentials.
-3. Import `database/schema.sql` then `database/seed.sql`.
-4. Make sure `storage/uploads/` is writable by the web server.
+Two deployment layouts are supported:
+
+- **Vhost (recommended).** Point the vhost's `DocumentRoot` at `public/`. Routing then relies only on `public/.htaccess`.
+- **Sub-folder.** Copy the whole project into `htdocs/testimonials-manager` (so the whole repo, not just `public/`, sits under the webroot) and open `http://localhost/testimonials-manager/`. The repo-root `.htaccess` rewrites everything into `public/`, blocks direct access to non-public folders (`src`, `config`, `vendor`, …), and `App\Http\Request` strips the sub-folder prefix from the request path so routes still match `/api/...`.
+
+Either way:
+
+1. Copy `.env.example` to `.env`; set `DB_HOST=127.0.0.1` and your MySQL credentials.
+2. Import `database/schema.sql` then `database/seed.sql`.
+3. Make sure `storage/uploads/` is writable by the web server.
 
 The release ZIP ships a `vendor/` directory, so Composer is not required.
 

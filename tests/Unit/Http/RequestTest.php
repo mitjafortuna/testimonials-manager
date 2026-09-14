@@ -52,4 +52,24 @@ final class RequestTest extends TestCase
         self::assertTrue($r->isXhr());
         Request::$rawBodyProvider = null;
     }
+
+    public function testFromGlobalsStripsSubFolderBasePath(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = '/sub/public/index.php';
+        $_SERVER['REQUEST_URI'] = '/sub/public/api/x?y=1';
+        $_GET = ['y' => '1'];
+        $r = Request::fromGlobals();
+        self::assertSame('/api/x', $r->path);
+    }
+
+    public function testFromGlobalsWithNoBasePathIsUnchanged(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = '/index.php';
+        $_SERVER['REQUEST_URI'] = '/api/x';
+        unset($_GET['y']);
+        $r = Request::fromGlobals();
+        self::assertSame('/api/x', $r->path);
+    }
 }
