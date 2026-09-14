@@ -32,19 +32,24 @@ final class LandingSyncService
     /** @return array{id:int,added:int,updated:int,removed:int,duration_ms:int} */
     public function run(): array
     {
-        $lock = $this->pdo->query("SELECT GET_LOCK('" . self::LOCK_NAME . "', 0)")->fetchColumn();
+        $lockStmt = $this->pdo->prepare('SELECT GET_LOCK(?, 0)');
+        $lockStmt->execute([self::LOCK_NAME]);
+        $lock = $lockStmt->fetchColumn();
         if ((int) $lock !== 1) {
             throw new ConflictException('A sync is already running');
         }
         $startedAt = $this->clock->now();
-        $runId = $this->runs->start($startedAt->format('Y-m-d H:i:s'));
         $t0 = hrtime(true);
+        $runId = null;
+        $committed = false;
         try {
+            $runId = $this->runs->start($startedAt->format('Y-m-d H:i:s'));
             $rows = $this->client->fetchAll();
             $this->pdo->beginTransaction();
             try {
                 $stats = $this->apply($rows, $startedAt->format('Y-m-d H:i:s'));
                 $this->pdo->commit();
+                $committed = true;
             } catch (\Throwable $e) {
                 $this->pdo->rollBack();
                 throw $e;
@@ -52,10 +57,16 @@ final class LandingSyncService
             $this->runs->finish($runId, 'ok', $this->clock->now()->format('Y-m-d H:i:s'), $stats['added'], $stats['updated'], $stats['removed'], null);
             return ['id' => $runId, 'duration_ms' => (int) ((hrtime(true) - $t0) / 1_000_000)] + $stats;
         } catch (\Throwable $e) {
-            $this->runs->finish($runId, 'failed', $this->clock->now()->format('Y-m-d H:i:s'), 0, 0, 0, $e->getMessage());
+            // The transaction already committed; the data landed, so don't overwrite the run as failed — just rethrow.
+            if ($committed) {
+                throw $e;
+            }
+            if ($runId !== null) {
+                $this->runs->finish($runId, 'failed', $this->clock->now()->format('Y-m-d H:i:s'), 0, 0, 0, $e->getMessage());
+            }
             throw $e;
         } finally {
-            $this->pdo->query("SELECT RELEASE_LOCK('" . self::LOCK_NAME . "')");
+            $this->pdo->prepare('SELECT RELEASE_LOCK(?)')->execute([self::LOCK_NAME]);
         }
     }
 
