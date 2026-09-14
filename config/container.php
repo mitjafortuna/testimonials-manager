@@ -5,11 +5,17 @@ declare(strict_types=1);
 use App\Application\LandingOverviewService;
 use App\Application\LandingSyncService;
 use App\Application\ProductSearchService;
+use App\Application\TestimonialService;
 use App\Container;
+use App\Domain\Auth\AnonymousUser;
+use App\Domain\Auth\CurrentUser;
+use App\Domain\Testimonial\RatingResolver;
+use App\Domain\Testimonial\TestimonialValidator;
 use App\Http\Controller\HealthController;
 use App\Http\Controller\HomeController;
 use App\Http\Controller\ProductController;
 use App\Http\Controller\SyncController;
+use App\Http\Controller\TestimonialController;
 use App\Http\Kernel;
 use App\Http\Middleware\RequireXhrMiddleware;
 use App\Http\Router;
@@ -17,6 +23,7 @@ use App\Infrastructure\Db\PdoFactory;
 use App\Infrastructure\Repository\LandingRepository;
 use App\Infrastructure\Repository\ProductRepository;
 use App\Infrastructure\Repository\SyncRunRepository;
+use App\Infrastructure\Repository\TestimonialRepository;
 use App\Infrastructure\Upstream\CurlLandingsApiClient;
 use App\Infrastructure\Upstream\CurlTransport;
 use App\Infrastructure\Upstream\FixtureLandingsApiClient;
@@ -71,6 +78,19 @@ return static function (array $config): Container {
     $c->set(ProductSearchService::class, fn (Container $c) => new ProductSearchService($c->get(ProductRepository::class)));
     $c->set(LandingOverviewService::class, fn (Container $c) => new LandingOverviewService($c->get(LandingRepository::class)));
     $c->set(ProductController::class, fn (Container $c) => new ProductController($c->get(ProductSearchService::class), $c->get(LandingOverviewService::class)));
+
+    $c->set(CurrentUser::class, fn () => new AnonymousUser());
+    $c->set(TestimonialValidator::class, fn () => new TestimonialValidator());
+    $c->set(RatingResolver::class, fn () => new RatingResolver());
+    $c->set(TestimonialRepository::class, fn (Container $c) => new TestimonialRepository($c->get(PDO::class)));
+    $c->set(TestimonialService::class, fn (Container $c) => new TestimonialService(
+        $c->get(TestimonialRepository::class),
+        $c->get(LandingRepository::class),
+        $c->get(TestimonialValidator::class),
+        $c->get(RatingResolver::class),
+        $c->get(CurrentUser::class),
+    ));
+    $c->set(TestimonialController::class, fn (Container $c) => new TestimonialController($c->get(TestimonialService::class)));
 
     return $c;
 };

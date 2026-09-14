@@ -16,7 +16,7 @@ final class Response
 
     public static function json(mixed $data, int $status = 200): self
     {
-        $body = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $body = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR);
         return new self($status, $body, ['Content-Type' => 'application/json; charset=utf-8']);
     }
 
