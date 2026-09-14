@@ -44,3 +44,6 @@ h1, h2, h3, h4, h5, .tm-heading { font-family: "Montserrat", system-ui, sans-ser
 .tm-dropzone { border: 2px dashed var(--line, #ccd); border-radius: 6px; padding: 1rem; text-align: center; color: #6c757d; cursor: pointer; }
 .tm-dropzone.is-over { border-color: var(--tm-primary); background: rgba(0,96,184,.06); }
 #tf-ai-status { min-width: 6rem; }
+.tm-drag-handle { cursor: grab; width: 1.5rem; }
+.tm-dragging { opacity: .4; }
+.tm-img-card[draggable="true"] { cursor: grab; }
