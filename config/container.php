@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Application\LandingSyncService;
+use App\Application\ProductSearchService;
 use App\Container;
 use App\Http\Controller\HealthController;
 use App\Http\Controller\HomeController;
+use App\Http\Controller\ProductController;
 use App\Http\Controller\SyncController;
 use App\Http\Kernel;
 use App\Http\Middleware\RequireXhrMiddleware;
@@ -64,6 +66,9 @@ return static function (array $config): Container {
         $c->get(Clock::class),
     ));
     $c->set(SyncController::class, fn (Container $c) => new SyncController($c->get(LandingSyncService::class), $c->get(SyncRunRepository::class)));
+
+    $c->set(ProductSearchService::class, fn (Container $c) => new ProductSearchService($c->get(ProductRepository::class)));
+    $c->set(ProductController::class, fn (Container $c) => new ProductController($c->get(ProductSearchService::class)));
 
     return $c;
 };
