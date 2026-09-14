@@ -96,4 +96,39 @@ final class LandingRepository
         $row = $stmt->fetch();
         return $row === false ? null : $row;
     }
+
+    /** @return list<array{id:int,country:string,is_master:bool,url:string,title:string,status:?string,testimonial_count:int}> */
+    public function listByProductSku(string $sku): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT l.id, l.country, l.is_master, l.url, l.title, l.status,
+                    (SELECT COUNT(*) FROM testimonials t WHERE t.landing_id = l.id) AS testimonial_count
+             FROM landings l JOIN products p ON p.id = l.product_id
+             WHERE p.parent_sku = ? AND l.removed_at IS NULL
+             ORDER BY l.is_master DESC, l.country ASC, l.id ASC',
+        );
+        $stmt->execute([$sku]);
+        $rows = [];
+        foreach ($stmt->fetchAll() as $r) {
+            $rows[] = [
+                'id' => (int) $r['id'], 'country' => (string) $r['country'], 'is_master' => (bool) $r['is_master'],
+                'url' => (string) $r['url'], 'title' => (string) $r['title'],
+                'status' => $r['status'] === null ? null : (string) $r['status'],
+                'testimonial_count' => (int) $r['testimonial_count'],
+            ];
+        }
+        return $rows;
+    }
+
+    /** @return array<string,mixed>|null */
+    public function findMasterFor(int $landingId): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT m.* FROM landings l JOIN landings m ON m.product_id = l.product_id AND m.is_master = 1 AND m.removed_at IS NULL
+             WHERE l.id = ? ORDER BY m.id ASC LIMIT 1',
+        );
+        $stmt->execute([$landingId]);
+        $row = $stmt->fetch();
+        return $row === false ? null : $row;
+    }
 }

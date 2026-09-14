@@ -14,4 +14,5 @@ return static function (Router $r): void {
     $r->post('/api/landings/sync', [SyncController::class, 'run']);
     $r->get('/api/sync/last', [SyncController::class, 'last']);
     $r->get('/api/products', [ProductController::class, 'index']);
+    $r->get('/api/products/{sku}/landings', [ProductController::class, 'landings']);
 };
