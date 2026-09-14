@@ -32,3 +32,7 @@ h1, h2, h3, h4, h5, .tm-heading { font-family: "Montserrat", system-ui, sans-ser
 .tm-country-code { font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--tm-dark); letter-spacing: .04em; }
 .tm-country-card { color: inherit; transition: box-shadow .15s; }
 .tm-country-card:hover { box-shadow: 0 4px 14px rgba(0,96,184,.18); }
+.tm-text { max-width: 28rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tm-stars { color: var(--tm-accent); font-weight: 500; }
+.tm-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; margin-right: 2px; background: var(--tm-light); }
+.tabular { font-variant-numeric: tabular-nums; }
