@@ -58,6 +58,7 @@ Filled in as phases land. Known so far:
 - Docker/CI run PHP 8.2 even though the code is written to stay 8.1-compatible; the CI matrix now runs both 8.1 and 8.2 so the compatibility claim is actually checked (see `.github/workflows/ci.yml`).
 - Media will be served through a PHP passthrough (`GET /media/{filename}`) rather than directly by Apache, once the images phase lands — portability (works the same under XAMPP, Docker, Fly) over raw static-file throughput.
 - Product/landing counts are computed per request rather than cached/denormalised — simpler and correct-by-construction; revisit only if the counts query shows up as a bottleneck.
+- Product and country counters include inactive testimonials — the admin wants to see everything that exists, not only what is currently shown.
 
 ## How this was built
 
