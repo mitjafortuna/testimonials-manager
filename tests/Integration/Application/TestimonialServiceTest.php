@@ -155,4 +155,20 @@ final class TestimonialServiceTest extends DatabaseTestCase
         self::assertFileDoesNotExist($this->imageStorage->path($names['filename']));
         self::assertFileDoesNotExist($this->imageStorage->path($names['thumb_filename']));
     }
+
+    public function testReorderRejectsAMismatchedIdSet(): void
+    {
+        $t1 = $this->svc->create(1, ['author_name' => 'A', 'text' => 'a']);
+        $t2 = $this->svc->create(1, ['author_name' => 'B', 'text' => 'b']);
+        $this->expectException(ValidationException::class);
+        $this->svc->reorder(1, [$t1['id']]);   // missing $t2['id']
+    }
+
+    public function testReorderAppliesTheGivenOrder(): void
+    {
+        $t1 = $this->svc->create(1, ['author_name' => 'A', 'text' => 'a']);
+        $t2 = $this->svc->create(1, ['author_name' => 'B', 'text' => 'b']);
+        $res = $this->svc->reorder(1, [$t2['id'], $t1['id']]);
+        self::assertSame([$t2['id'], $t1['id']], array_column($res['data'], 'id'));
+    }
 }

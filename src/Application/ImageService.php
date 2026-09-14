@@ -64,4 +64,26 @@ final class ImageService
         $this->images->delete($imageId);
         $this->storage->delete($row['filename'], $row['thumb_filename']);
     }
+
+    /**
+     * @param list<int> $ids
+     * @return list<ImgRow>
+     */
+    public function reorder(int $testimonialId, array $ids): array
+    {
+        if ($this->testimonials->find($testimonialId) === null) {
+            throw new NotFoundException("Testimonial $testimonialId not found");
+        }
+        $existing = $this->images->listByTestimonialIds([$testimonialId])[$testimonialId] ?? [];
+        $existingIds = array_column($existing, 'id');
+        $sortedExisting = $existingIds;
+        sort($sortedExisting);
+        $sortedGiven = $ids;
+        sort($sortedGiven);
+        if ($sortedExisting !== $sortedGiven) {
+            throw new ValidationException(['ids' => 'Must list exactly the images belonging to this testimonial']);
+        }
+        $this->images->reorder($testimonialId, $ids);
+        return $this->images->listByTestimonialIds([$testimonialId])[$testimonialId] ?? [];
+    }
 }

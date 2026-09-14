@@ -66,4 +66,24 @@ final class TestimonialsTest extends ApiTestCase
         self::assertSame(404, $this->request('POST', '/api/landings/999999999/testimonials', ['author_name' => 'A', 'text' => 'T'])['status']);
         self::assertSame(404, $this->request('GET', '/api/testimonials/abc')['status']);
     }
+
+    public function testReorderTestimonials(): void
+    {
+        $list = $this->request('GET', '/api/landings/' . self::EN . '/testimonials')['json']['data'];
+        $ids = array_column($list, 'id');
+        self::assertGreaterThanOrEqual(2, count($ids));
+        $reversed = array_reverse($ids);
+        $r = $this->request('PATCH', '/api/landings/' . self::EN . '/testimonials/reorder', ['ids' => $reversed]);
+        self::assertSame(200, $r['status']);
+        self::assertSame($reversed, array_column($r['json']['data'], 'id'));
+        // restore original order so other tests in this run aren't affected
+        $this->request('PATCH', '/api/landings/' . self::EN . '/testimonials/reorder', ['ids' => $ids]);
+    }
+
+    public function testReorderRejectsWrongIdSet(): void
+    {
+        $r = $this->request('PATCH', '/api/landings/' . self::EN . '/testimonials/reorder', ['ids' => [999999999]]);
+        self::assertSame(422, $r['status']);
+        self::assertArrayHasKey('ids', $r['json']['error']['fields']);
+    }
 }

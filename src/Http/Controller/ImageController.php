@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controller;
 
 use App\Application\ImageService;
+use App\Domain\Exception\ValidationException;
 use App\Http\Request;
 use App\Http\Response;
 use App\Http\UploadedFiles;
@@ -25,5 +26,14 @@ final class ImageController
     {
         $this->service->delete(TestimonialController::id($request, 'id'));
         return Response::noContent();
+    }
+
+    public function reorder(Request $request): Response
+    {
+        $raw = $request->input('ids');
+        if (!is_array($raw)) {
+            throw new ValidationException(['ids' => 'Must be an array of image ids']);
+        }
+        return Response::json(['images' => $this->service->reorder(TestimonialController::id($request, 'id'), array_map('intval', $raw))]);
     }
 }
