@@ -6,9 +6,8 @@
     onUnauthorized: null,
   };
 
-  Router.register('#/products', function () {
-    App.el.innerHTML = '<h1 class="h3">Products</h1><p class="text-muted">Product search arrives in phase 4.</p>';
-  });
+  Router.register('#/products', (params, query) => Views.products(params, query));
+  Router.register('#/products/{sku}', (params) => Views.countries(params));
 
   Sync.mount();
   Router.start();

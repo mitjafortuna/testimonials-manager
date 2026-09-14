@@ -28,3 +28,7 @@ h1, h2, h3, h4, h5, .tm-heading { font-family: "Montserrat", system-ui, sans-ser
 .tm-save-status.saving { color: #6c757d; }
 .tm-save-status.saved { color: #198754; }
 .tm-save-status.failed { color: #dc3545; }
+.tm-row-link { cursor: pointer; }
+.tm-country-code { font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--tm-dark); letter-spacing: .04em; }
+.tm-country-card { color: inherit; transition: box-shadow .15s; }
+.tm-country-card:hover { box-shadow: 0 4px 14px rgba(0,96,184,.18); }
