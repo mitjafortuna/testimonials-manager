@@ -43,6 +43,10 @@ The release ZIP ships a `vendor/` directory, so Composer is not required.
 
 Sync source: `POST /api/landings/sync` and `bin/sync.php` read from the upstream API using `LANDINGS_API_URL`/`LANDINGS_API_KEY`. Set `LANDINGS_API_FIXTURE=tests/fixtures/landings.json` to replay the captured response instead (this is what `make api` and CI do).
 
+## Deployment
+
+See [deploy/README.md](deploy/README.md) for hosting on Fly.io: two apps (`tm-dfvu` for the PHP/Apache image, `tm-dfvu-db` for MySQL on a private network), `bin/install.php` as an idempotent release command, and `.github/workflows/deploy.yml` for continuous deployment on push to `main`. The live demo link will be added here once the apps are actually provisioned.
+
 ## Architecture
 
 See [docs/superpowers/specs/2026-09-13-testimonials-manager-design.md](docs/superpowers/specs/2026-09-13-testimonials-manager-design.md) for the full design and [docs/adr](docs/adr) for individual decisions. Sections on the schema, API, shortcuts and time spent are filled in as phases land.

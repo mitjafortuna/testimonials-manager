@@ -15,3 +15,4 @@ Rough time spent per phase (owner + AI pairing). Requested by the assignment bri
 | 6 | Images (validation, storage, endpoints, uploader) | 3h |
 | 7 | Login (session auth, middleware, UI) | 1.5h |
 | 8 | Playwright e2e + CI job | 1.5h |
+| 9 | Fly.io deploy (MySQL app, volumes, release command, CD workflow) | 2h |
