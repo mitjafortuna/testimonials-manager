@@ -8,6 +8,7 @@
 
   Router.register('#/products', (params, query) => Views.products(params, query));
   Router.register('#/products/{sku}', (params) => Views.countries(params));
+  Router.register('#/landings/{id}', (params) => Views.testimonials(params));
 
   Sync.mount();
   Router.start();
