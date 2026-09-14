@@ -1,0 +1,6 @@
+{
+  "name": "testimonials-manager-e2e",
+  "private": true,
+  "scripts": { "test": "playwright test", "report": "playwright show-report" },
+  "devDependencies": { "@playwright/test": "1.47.2", "@types/node": "^20.14.0", "typescript": "^5.5.0" }
+}

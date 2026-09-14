@@ -38,7 +38,7 @@ The release ZIP ships a `vendor/` directory, so Composer is not required.
 | `make test` | unit + integration + API suites (API runs against a fixture-backed built-in server; never calls the real upstream) |
 | `make lint` / `make stan` | code style (PSR-12) / static analysis (level 6) |
 | `make api` | API suite against a built-in PHP server inside the app container (mirrors CI) |
-| `make e2e` | Playwright end-to-end tests |
+| `make e2e` | Playwright happy path + error visibility (Chromium in Docker) |
 | `make seed-large` | run once on a fresh DB (not idempotent); generates up to 50 testimonials per landing (~150k rows by default) |
 
 Sync source: `POST /api/landings/sync` and `bin/sync.php` read from the upstream API using `LANDINGS_API_URL`/`LANDINGS_API_KEY`. Set `LANDINGS_API_FIXTURE=tests/fixtures/landings.json` to replay the captured response instead (this is what `make api` and CI do).
