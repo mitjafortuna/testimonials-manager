@@ -17,6 +17,7 @@ h1, h2, h3, h4, h5, .tm-heading { font-family: "Montserrat", system-ui, sans-ser
 .tm-navbar { background: var(--tm-dark); }
 .tm-brand { font-family: "Montserrat", sans-serif; font-weight: 800; letter-spacing: .12em; color: #fff; }
 .tm-brand-sub { margin-left: .75rem; padding-left: .75rem; border-left: 1px solid rgba(255,255,255,.3); font-weight: 400; color: rgba(255,255,255,.85); }
+#nav-right .btn-outline-light { --bs-btn-color: #fff; }
 .btn-primary { --bs-btn-bg: var(--tm-primary); --bs-btn-border-color: var(--tm-primary); --bs-btn-hover-bg: var(--tm-primary-dark); --bs-btn-hover-border-color: var(--tm-primary-dark); }
 .btn-secondary-yellow { background: var(--tm-secondary); border-color: var(--tm-secondary); color: var(--tm-dark); font-weight: 500; }
 .card { border: 0; box-shadow: 0 1px 3px rgba(40,40,53,.08); }

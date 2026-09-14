@@ -36,7 +36,7 @@
     if (!res.ok) {
       const err = (json && json.error) || {};
       const ex = new ApiError(res.status, err.code || 'http_error', err.message || res.statusText, err.fields);
-      if (res.status === 401 && window.App && window.App.onUnauthorized) window.App.onUnauthorized();
+      if (res.status === 401 && window.App && window.App.onUnauthorized && path !== '/api/auth/me') window.App.onUnauthorized();
       throw ex;
     }
     return json;
