@@ -32,7 +32,7 @@ final class ImageService
      * @param list<array{name:string,type:string,tmp_name:string,error:int,size:int}> $files
      * @return list<ImgRow>
      */
-    public function upload(int $testimonialId, array $files): array
+    public function upload(int $testimonialId, array $files, ?string $crop = null, bool $convertWebp = false): array
     {
         if ($this->testimonials->find($testimonialId) === null) {
             throw new NotFoundException("Testimonial $testimonialId not found");
@@ -44,10 +44,11 @@ final class ImageService
         $checked = array_map(fn (array $f) => $this->validator->validate($f), $files);
         $stored = [];
         foreach ($checked as $c) {
-            $names = $this->storage->store($c['tmp_path'], $c['ext']);
+            $names = $this->storage->store($c['tmp_path'], $c['ext'], $crop, $convertWebp);
+            $size = (int) filesize($this->storage->path($names['filename']));
             $id = $this->images->insert($testimonialId, [
-                'filename' => $names['filename'], 'thumb_filename' => $names['thumb_filename'], 'mime' => $c['mime'],
-                'size_bytes' => $c['size'], 'width' => $c['width'], 'height' => $c['height'],
+                'filename' => $names['filename'], 'thumb_filename' => $names['thumb_filename'], 'mime' => $names['mime'],
+                'size_bytes' => $size, 'width' => $names['width'], 'height' => $names['height'],
             ], $this->user->id());
             $row = $this->images->find($id);
             if ($row !== null) {

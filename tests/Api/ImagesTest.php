@@ -48,6 +48,21 @@ final class ImagesTest extends ApiTestCase
         $this->request('DELETE', "/api/testimonials/$id");
     }
 
+    public function testUploadWithConvertWebpAndCrop(): void
+    {
+        $id = $this->newTestimonial();
+        $r = $this->upload("/api/testimonials/$id/images", ['images[0]' => ImageFixtures::jpeg(sys_get_temp_dir(), 800, 400)], ['convert_webp' => '1', 'crop' => 'square']);
+        self::assertSame(201, $r['status'], json_encode($r['json']));
+        $img = $r['json']['images'][0];
+        self::assertStringEndsWith('.webp', $img['filename']);
+        self::assertSame(400, $img['width']);
+        self::assertSame(400, $img['height']);
+
+        $media = $this->raw('/media/' . $img['filename']);
+        self::assertSame('image/webp', $media['content_type']);
+        $this->request('DELETE', "/api/testimonials/$id");
+    }
+
     public function testRejectsNonImageAndEmptyBatch(): void
     {
         $id = $this->newTestimonial();

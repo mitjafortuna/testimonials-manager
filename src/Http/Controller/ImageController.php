@@ -19,7 +19,14 @@ final class ImageController
     public function store(Request $request): Response
     {
         $files = UploadedFiles::normalize($request->files, 'images');
-        return Response::json(['images' => $this->service->upload(TestimonialController::id($request, 'id'), $files)], 201);
+        $crop = $request->input('crop');
+        $convertWebp = filter_var($request->input('convert_webp', false), FILTER_VALIDATE_BOOLEAN);
+        return Response::json(['images' => $this->service->upload(
+            TestimonialController::id($request, 'id'),
+            $files,
+            $crop === null || $crop === '' ? null : (string) $crop,
+            $convertWebp,
+        )], 201);
     }
 
     public function destroy(Request $request): Response

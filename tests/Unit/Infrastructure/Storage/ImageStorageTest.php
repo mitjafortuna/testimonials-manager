@@ -74,6 +74,47 @@ final class ImageStorageTest extends TestCase
         self::assertTrue(ImageStorage::isSafeFilename('ffffffff-ffff-4fff-8fff-ffffffffffff_thumb.webp'));
     }
 
+    public function testDownscalesLargeMainImageButNeverUpscales(): void
+    {
+        $storage = new ImageStorage($this->dir, 300);
+        $big = $storage->store(ImageFixtures::jpeg(sys_get_temp_dir(), 2000, 1000), 'jpg');
+        self::assertSame([1600, 800], $this->dimensions($storage->path($big['filename'])));
+        self::assertSame(1600, $big['width']);
+        self::assertSame(800, $big['height']);
+
+        $small = $storage->store(ImageFixtures::jpeg(sys_get_temp_dir(), 640, 480), 'jpg');
+        self::assertSame([640, 480], $this->dimensions($storage->path($small['filename'])));
+    }
+
+    public function testConvertsToWebpWhenRequested(): void
+    {
+        $storage = new ImageStorage($this->dir, 300);
+        $r = $storage->store(ImageFixtures::png(sys_get_temp_dir(), 640, 480), 'png', null, true);
+        self::assertStringEndsWith('.webp', $r['filename']);
+        self::assertStringEndsWith('.webp', $r['thumb_filename']);
+        self::assertSame('image/webp', $r['mime']);
+        self::assertSame('image/webp', mime_content_type($storage->path($r['filename'])));
+        self::assertSame('image/webp', mime_content_type($storage->path($r['thumb_filename'])));
+    }
+
+    public function testCropsToSquareWhenRequested(): void
+    {
+        $storage = new ImageStorage($this->dir, 300);
+        $r = $storage->store(ImageFixtures::jpeg(sys_get_temp_dir(), 800, 400), 'jpg', 'square');
+        self::assertSame(400, $r['width']);
+        self::assertSame(400, $r['height']);
+        self::assertSame([400, 400], $this->dimensions($storage->path($r['filename'])));
+    }
+
+    public function testDefaultCallSignatureIsUnchanged(): void
+    {
+        // The exact call every existing production and test call site makes — must keep working.
+        $storage = new ImageStorage($this->dir, 300);
+        $r = $storage->store(ImageFixtures::png(sys_get_temp_dir()), 'png');
+        self::assertStringEndsWith('.png', $r['filename']);
+        self::assertSame('image/png', $r['mime']);
+    }
+
     /** @return array{0:int,1:int} */
     private function dimensions(string $path): array
     {
