@@ -1,0 +1,7 @@
+# Fallback for installs where the whole project sits inside the webroot (XAMPP htdocs).
+# Recommended setup is a vhost with DocumentRoot = public/.
+RewriteEngine On
+RewriteRule ^\.(env|git) - [F,L]
+RewriteRule ^(config|src|vendor|database|tests|docs|storage|bin)(/|$) - [F,L]
+RewriteCond %{REQUEST_URI} !^/.*public/
+RewriteRule ^(.*)$ public/$1 [L]

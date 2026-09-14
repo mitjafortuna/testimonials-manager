@@ -28,5 +28,5 @@
     "lint:fix": "php-cs-fixer fix",
     "stan": "phpstan analyse --memory-limit=512M"
   },
-  "config": { "sort-packages": true, "optimize-autoloader": true }
+  "config": { "sort-packages": true, "optimize-autoloader": true, "platform": { "php": "8.1.34" } }
 }

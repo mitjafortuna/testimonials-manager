@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application;
 
 use App\Domain\Exception\ConflictException;
+use App\Domain\Exception\UpstreamException;
 use App\Infrastructure\Repository\LandingRepository;
 use App\Infrastructure\Repository\ProductRepository;
 use App\Infrastructure\Repository\SyncRunRepository;
@@ -45,6 +46,9 @@ final class LandingSyncService
         try {
             $runId = $this->runs->start($startedAt->format('Y-m-d H:i:s'));
             $rows = $this->client->fetchAll();
+            if ($rows === []) {
+                throw new UpstreamException('Upstream returned no landings; refusing to sync');
+            }
             $this->pdo->beginTransaction();
             try {
                 $stats = $this->apply($rows, $startedAt->format('Y-m-d H:i:s'));
@@ -62,7 +66,12 @@ final class LandingSyncService
                 throw $e;
             }
             if ($runId !== null) {
-                $this->runs->finish($runId, 'failed', $this->clock->now()->format('Y-m-d H:i:s'), 0, 0, 0, $e->getMessage());
+                try {
+                    $this->runs->finish($runId, 'failed', $this->clock->now()->format('Y-m-d H:i:s'), 0, 0, 0, $e->getMessage());
+                } catch (\Throwable $finishError) {
+                    // Recording the failure must never hide the original failure.
+                    error_log(sprintf('[sync] failed to record failed run #%d: %s', $runId, $finishError->getMessage()));
+                }
             }
             throw $e;
         } finally {

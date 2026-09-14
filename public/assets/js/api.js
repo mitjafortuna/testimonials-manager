@@ -21,9 +21,12 @@
         init.body = JSON.stringify(body);
       }
     }
+    // Resolve against the document location (not '/') so the app also works when deployed
+    // under a sub-folder, e.g. XAMPP htdocs/testimonials-manager/public/.
+    const url = new URL(path.replace(/^\//, ''), document.baseURI).toString();
     let res;
     try {
-      res = await fetch(path, init);
+      res = await fetch(url, init);
     } catch (e) {
       throw new ApiError(0, 'network_error', 'Network error — the server could not be reached');
     }

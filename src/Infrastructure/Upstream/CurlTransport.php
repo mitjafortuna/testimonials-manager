@@ -19,6 +19,7 @@ final class CurlTransport implements HttpTransportInterface
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_TIMEOUT => $this->timeoutSeconds,
+            CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_FOLLOWLOCATION => false,
         ]);
         $body = curl_exec($ch);

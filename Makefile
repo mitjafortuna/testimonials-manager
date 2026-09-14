@@ -13,8 +13,10 @@ sh:
 	$(COMPOSE) exec app bash
 install:       ## composer install inside the container
 	$(RUN) composer install
-test:          ## all PHPUnit suites (needs `make up`)
-	$(COMPOSE) exec app composer test
+test:          ## all PHPUnit suites: unit, integration and the fixture-backed api suite (needs `make up`)
+	$(MAKE) unit
+	$(MAKE) integration
+	$(MAKE) api
 unit:
 	$(RUN) composer test:unit
 integration:

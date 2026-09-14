@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 /**
  * Inserts a large synthetic dataset for performance checks:
- * ~300 products × up to 20 countries × up to 50 testimonials (~200k rows).
+ * ~300 products × up to 20 countries × up to 50 testimonials per landing (~150k rows by default).
+ * Run once on a fresh DB — not idempotent.
  * Usage: php database/seed-large.php [products=300] [countries=20] [testimonials=50]
  * Uses landing ids from 1_000_000 upwards so it never collides with upstream ids.
  */

@@ -33,6 +33,7 @@ final class Request
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $path = self::stripBasePath($path, $_SERVER['SCRIPT_NAME'] ?? '');
         $headers = [];
         foreach ($_SERVER as $k => $v) {
             if (str_starts_with($k, 'HTTP_')) {
@@ -50,6 +51,42 @@ final class Request
             $body = is_array($decoded) ? $decoded : [];
         }
         return new self($method, $path, $_GET, $body, $headers, $_FILES, $_COOKIE);
+    }
+
+    /**
+     * Strips the deployment base path (the directory the front controller lives in) from the
+     * request path, so routing works whether the app is served from a vhost root (SCRIPT_NAME
+     * "/index.php") or a sub-folder install, e.g. XAMPP htdocs (SCRIPT_NAME "/sub/public/index.php").
+     *
+     * The repo-root .htaccess rewrites a sub-folder request internally into public/ without
+     * changing REQUEST_URI (Apache leaves REQUEST_URI as the original client request line), so the
+     * request path (e.g. "/tm/api/x") may be missing the "/public" segment that SCRIPT_NAME has
+     * (e.g. "/tm/public/index.php") — while a request that already targets public/ directly (or the
+     * PHP built-in server, which has no .htaccess) keeps it. Try both candidate bases, longest first,
+     * and only strip on a segment boundary so "/sub" cannot swallow the start of "/subway/...".
+     */
+    private static function stripBasePath(string $path, string $scriptName): string
+    {
+        $scriptDir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+        $candidates = [];
+        if ($scriptDir !== '' && $scriptDir !== '/') {
+            $candidates[] = $scriptDir;
+            if (str_ends_with($scriptDir, '/public')) {
+                $candidates[] = substr($scriptDir, 0, -strlen('/public'));
+            }
+        }
+        foreach ($candidates as $base) {
+            if ($base === '' || $base === '/') {
+                continue;
+            }
+            if ($path === $base) {
+                return '/';
+            }
+            if (str_starts_with($path, $base . '/')) {
+                return substr($path, strlen($base));
+            }
+        }
+        return $path;
     }
 
     public function header(string $name): ?string

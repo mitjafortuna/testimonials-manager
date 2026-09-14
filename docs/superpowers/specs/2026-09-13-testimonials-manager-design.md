@@ -66,7 +66,7 @@ landings            id PK (= upstream id, NOT auto-increment), product_id FK→p
                     title VARCHAR(255), description TEXT, image VARCHAR(512), status VARCHAR(64),
                     removed_at DATETIME NULL, last_synced_at DATETIME,
                     created_at, updated_at
-                    UNIQUE(product_id, country), INDEX(country), INDEX(removed_at)
+                    INDEX(product_id, country), INDEX(country), INDEX(removed_at)
 
 testimonials        id PK AI, landing_id FK→landings (ON DELETE RESTRICT),
                     author_name VARCHAR(128), text VARCHAR(2000),
@@ -94,7 +94,7 @@ sync_runs           id PK AI, started_at, finished_at NULL, status ENUM('running
 
 Decisions (each becomes an ADR):
 
-- **Upstream id as `landings.id`.** Sync is a pure `INSERT … ON DUPLICATE KEY UPDATE`; testimonials never lose their reference. `(product_id, country)` is a secondary unique key that guards against upstream inconsistencies.
+- **Upstream id as `landings.id`.** Sync is a pure `INSERT … ON DUPLICATE KEY UPDATE`; testimonials never lose their reference. `(product_id, country)` is deliberately only an index — a unique key would turn an upstream re-creation of a landing under a new id into a silent in-place rewrite of the old row (MySQL fires ON DUPLICATE KEY UPDATE on any unique collision). The old row is soft-deleted instead and keeps its testimonials.
 - **Soft-delete on disappearance.** A landing missing from a full sync gets `removed_at` set; it is hidden from the UI but its testimonials are preserved. Hard delete is a manual operation we do not build.
 - **`products` is a real table**, populated from master landings during sync. The search page becomes one indexed query over `products` with LEFT JOINs for counts, instead of grouping over `landings`.
 - **Inheritance is resolved at read time.** A landing with zero testimonials is served the EN master's set, flagged `inherited: true`. Nothing to keep in sync; the "copy from EN" bonus materialises the inherited set into real rows.

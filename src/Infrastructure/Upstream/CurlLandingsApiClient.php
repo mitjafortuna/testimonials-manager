@@ -17,6 +17,9 @@ final class CurlLandingsApiClient implements LandingsApiClientInterface
         private readonly string $apiKey,
         private readonly int $pageSize = 1000,
     ) {
+        if ($this->pageSize <= 0) {
+            throw new \InvalidArgumentException('pageSize must be a positive integer');
+        }
     }
 
     public function fetchAll(): array
@@ -38,8 +41,13 @@ final class CurlLandingsApiClient implements LandingsApiClientInterface
                 $all[] = self::normalise($raw);
             }
             $count = count($json['data']);
+            $total = is_array($json['meta'] ?? null) ? $json['meta']['total'] ?? null : null;
             $offset += $count;
-        } while ($count === $this->pageSize);
+            // Upstream may cap `limit` below what we asked for; when it reports meta.total, page
+            // by that instead of assuming a short page means "done" (a page could legitimately be
+            // shorter than our requested pageSize while more rows remain).
+            $more = $total === null ? $count === $this->pageSize : $offset < (int) $total;
+        } while ($count > 0 && $more);
         return $all;
     }
 
@@ -58,7 +66,7 @@ final class CurlLandingsApiClient implements LandingsApiClientInterface
             'id' => (int) $raw['id'],
             'parent_sku' => (string) $raw['parent_sku'],
             'country' => strtoupper((string) $raw['country']),
-            'is_master' => (bool) ($raw['is_master'] ?? false),
+            'is_master' => filter_var($raw['is_master'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'url' => (string) $raw['url'],
             'title' => (string) ($raw['title'] ?? ''),
             'description' => isset($raw['description']) ? (string) $raw['description'] : null,

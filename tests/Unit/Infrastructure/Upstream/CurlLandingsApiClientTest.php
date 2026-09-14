@@ -76,4 +76,40 @@ final class CurlLandingsApiClientTest extends TestCase
         $this->expectException(UpstreamException::class);
         $client->fetchAll();
     }
+
+    public function testPagesByMetaTotalEvenWhenUpstreamCapsTheLimit(): void
+    {
+        // We ask for pageSize 1000, but upstream caps it to 2 (as reflected in meta.limit)
+        // and reports meta.total; paging must follow meta.total, not our own pageSize.
+        $t = $this->transport([
+            ['status' => 200, 'body' => $this->page([$this->row(1), $this->row(2)], 2, 0, 3)],
+            ['status' => 200, 'body' => $this->page([$this->row(3)], 2, 2, 3)],
+        ]);
+        $client = new CurlLandingsApiClient($t, 'https://api.test/landings.php', 'secret', 1000);
+        $rows = $client->fetchAll();
+        self::assertSame([1, 2, 3], array_column($rows, 'id'));
+        self::assertCount(2, $t->calls);
+        self::assertStringContainsString('limit=1000&offset=0', $t->calls[0]['url']);
+        self::assertStringContainsString('limit=1000&offset=2', $t->calls[1]['url']);
+    }
+
+    public function testPagesByShortPageWhenMetaTotalIsAbsent(): void
+    {
+        $body1 = json_encode(['data' => [$this->row(1), $this->row(2)], 'meta' => ['count' => 2, 'limit' => 2, 'offset' => 0]], JSON_THROW_ON_ERROR);
+        $body2 = json_encode(['data' => [$this->row(3)], 'meta' => ['count' => 1, 'limit' => 2, 'offset' => 2]], JSON_THROW_ON_ERROR);
+        $t = $this->transport([
+            ['status' => 200, 'body' => $body1],
+            ['status' => 200, 'body' => $body2],
+        ]);
+        $client = new CurlLandingsApiClient($t, 'https://api.test/landings.php', 'secret', 2);
+        $rows = $client->fetchAll();
+        self::assertSame([1, 2, 3], array_column($rows, 'id'));
+        self::assertCount(2, $t->calls);
+    }
+
+    public function testConstructorRejectsNonPositivePageSize(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        new CurlLandingsApiClient($this->transport([]), 'https://api.test', 'k', 0);
+    }
 }

@@ -52,4 +52,64 @@ final class RequestTest extends TestCase
         self::assertTrue($r->isXhr());
         Request::$rawBodyProvider = null;
     }
+
+    public function testFromGlobalsStripsSubFolderBasePath(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = '/sub/public/index.php';
+        $_SERVER['REQUEST_URI'] = '/sub/public/api/x?y=1';
+        $_GET = ['y' => '1'];
+        $r = Request::fromGlobals();
+        self::assertSame('/api/x', $r->path);
+    }
+
+    public function testFromGlobalsWithNoBasePathIsUnchanged(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = '/index.php';
+        $_SERVER['REQUEST_URI'] = '/api/x';
+        unset($_GET['y']);
+        $r = Request::fromGlobals();
+        self::assertSame('/api/x', $r->path);
+    }
+
+    public function testFromGlobalsStripsSubFolderBasePathWhenApacheRewriteDropsPublic(): void
+    {
+        // Root .htaccess rewrites /tm/api/x internally to public/api/x, so PHP sees
+        // SCRIPT_NAME=/tm/public/index.php but the ORIGINAL REQUEST_URI=/tm/api/x (no /public).
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = '/tm/public/index.php';
+        $_SERVER['REQUEST_URI'] = '/tm/api/x';
+        $r = Request::fromGlobals();
+        self::assertSame('/api/x', $r->path);
+    }
+
+    public function testFromGlobalsStripsSubFolderBasePathWhenRequestUriIncludesPublic(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = '/tm/public/index.php';
+        $_SERVER['REQUEST_URI'] = '/tm/public/api/x';
+        $r = Request::fromGlobals();
+        self::assertSame('/api/x', $r->path);
+    }
+
+    public function testFromGlobalsDoesNotStripALongerSiblingPath(): void
+    {
+        // "/sub" must only match on a segment boundary — it must not strip the common
+        // prefix off an unrelated path like "/subway/...".
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = '/sub/index.php';
+        $_SERVER['REQUEST_URI'] = '/subway/api/x';
+        $r = Request::fromGlobals();
+        self::assertSame('/subway/api/x', $r->path);
+    }
+
+    public function testFromGlobalsStripsSubFolderBaseDownToRoot(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = '/tm/public/index.php';
+        $_SERVER['REQUEST_URI'] = '/tm/';
+        $r = Request::fromGlobals();
+        self::assertSame('/', $r->path);
+    }
 }

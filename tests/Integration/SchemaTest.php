@@ -29,6 +29,25 @@ final class SchemaTest extends DatabaseTestCase
         self::assertTrue(true);
     }
 
+    public function testLandingsProductCountryIsIndexedButNotUnique(): void
+    {
+        $stmt = self::$pdo->query("SHOW INDEX FROM landings WHERE Key_name = 'ix_landings_product_country'");
+        $rows = $stmt->fetchAll();
+        self::assertNotEmpty($rows, 'expected a non-unique index ix_landings_product_country');
+        self::assertSame('1', (string) $rows[0]['Non_unique']);
+
+        $unique = self::$pdo->query("SHOW INDEX FROM landings WHERE Key_name = 'uq_landings_product_country'")->fetchAll();
+        self::assertSame([], $unique, 'the old unique key must be gone');
+    }
+
+    public function testTwoActiveLandingsCanShareProductAndCountry(): void
+    {
+        $productId = self::insert('products', ['parent_sku' => 'abforge', 'title' => 'AbForge']);
+        self::insert('landings', ['id' => 1001, 'product_id' => $productId, 'country' => 'EN', 'is_master' => 1, 'url' => 'https://x/en/1', 'title' => 't', 'last_synced_at' => '2026-09-13 00:00:00']);
+        self::insert('landings', ['id' => 1002, 'product_id' => $productId, 'country' => 'EN', 'is_master' => 0, 'url' => 'https://x/en/2', 'title' => 't', 'last_synced_at' => '2026-09-13 00:00:00']);
+        self::assertSame(2, (int) self::$pdo->query('SELECT COUNT(*) FROM landings WHERE product_id = ' . $productId . " AND country = 'EN'")->fetchColumn());
+    }
+
     public function testDeletingTestimonialCascadesToImages(): void
     {
         [$landingId, $testimonialId] = $this->seedLandingAndTestimonial();

@@ -1,0 +1,12 @@
+.env
+.git
+vendor
+storage/uploads/*
+!storage/uploads/.gitkeep
+tests/e2e/node_modules
+tests/e2e/playwright-report
+tests/e2e/test-results
+build
+.phpunit.cache
+.php-cs-fixer.cache
+.superpowers
