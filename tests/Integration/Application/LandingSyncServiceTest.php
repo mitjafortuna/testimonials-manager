@@ -86,6 +86,25 @@ final class LandingSyncServiceTest extends DatabaseTestCase
         self::assertSame(11, (int) self::$pdo->query('SELECT COUNT(*) FROM products')->fetchColumn());
     }
 
+    public function testLandingRecreatedUpstreamWithNewIdKeepsOldRowSoftDeleted(): void
+    {
+        $this->service(new FixtureLandingsApiClient($this->fixture))->run();
+        $oldId = $this->fixture[5]['id'];
+        $testimonialId = self::insert('testimonials', ['landing_id' => $oldId, 'author_name' => 'A', 'text' => 'T', 'rating' => 5, 'gender' => 'male', 'sort_order' => 0]);
+
+        $changed = $this->fixture;
+        $newId = 990001;
+        $changed[5] = ['id' => $newId, 'parent_sku' => $changed[5]['parent_sku'], 'country' => $changed[5]['country'], 'is_master' => $changed[5]['is_master'], 'url' => $changed[5]['url'], 'title' => $changed[5]['title'], 'description' => $changed[5]['description'], 'image' => $changed[5]['image'], 'status' => $changed[5]['status']];
+
+        $result = $this->service(new FixtureLandingsApiClient($changed))->run();
+
+        self::assertSame(1, $result['added']);
+        self::assertSame(1, $result['removed']);
+        self::assertNull(self::$pdo->query("SELECT removed_at FROM landings WHERE id = $newId")->fetchColumn());
+        self::assertNotNull(self::$pdo->query("SELECT removed_at FROM landings WHERE id = $oldId")->fetchColumn());
+        self::assertSame($oldId, (int) self::$pdo->query("SELECT landing_id FROM testimonials WHERE id = $testimonialId")->fetchColumn());
+    }
+
     public function testUpstreamFailureIsRecordedAndRethrown(): void
     {
         $client = new class () implements LandingsApiClientInterface {

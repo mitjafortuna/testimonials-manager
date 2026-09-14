@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- id is the UPSTREAM landing id (stable sync key), not auto-increment.
 -- removed_at marks landings that disappeared from the upstream feed; their testimonials are kept.
+-- (product_id, country) is deliberately NOT unique: upstream may recreate a landing under a new id;
+-- a unique key would make ON DUPLICATE KEY UPDATE silently rewrite the old row. Sync is keyed by id
+-- only; the old row is soft-deleted.
 CREATE TABLE IF NOT EXISTS landings (
   id             INT UNSIGNED NOT NULL,
   product_id     INT UNSIGNED NOT NULL,
@@ -45,7 +48,7 @@ CREATE TABLE IF NOT EXISTS landings (
   created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_landings_product_country (product_id, country),
+  KEY ix_landings_product_country (product_id, country),
   KEY ix_landings_country (country),
   KEY ix_landings_removed (removed_at),
   CONSTRAINT fk_landings_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE RESTRICT
