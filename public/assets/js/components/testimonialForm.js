@@ -40,7 +40,7 @@
       </div>
       <div class="modal-footer justify-content-between">
         <span id="tf-status" class="tm-save-status"></span>
-        <div><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button> <button type="submit" class="btn btn-primary" id="tf-save">Save</button></div>
+        <div><button type="button" class="btn btn-outline-secondary" id="tf-history">History</button> <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button> <button type="submit" class="btn btn-primary" id="tf-save">Save</button></div>
       </div>
     </form></div>`;
     document.body.appendChild(el);
@@ -134,6 +134,9 @@
       clearErrors();
       fill(testimonial);
       el.querySelector('.modal-title').textContent = testimonial ? `Edit testimonial #${testimonial.id}` : 'New testimonial';
+      const historyBtn = el.querySelector('#tf-history');
+      historyBtn.disabled = !testimonial;
+      historyBtn.onclick = testimonial ? () => HistoryPanel.open(testimonial.id) : null;
       const status = SaveStatus.bind(el.querySelector('#tf-status'));
       el.querySelector('#tf-status').innerHTML = '';
       const form = el.querySelector('#testimonial-form');
