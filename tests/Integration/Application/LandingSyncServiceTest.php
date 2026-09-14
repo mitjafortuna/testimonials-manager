@@ -105,6 +105,25 @@ final class LandingSyncServiceTest extends DatabaseTestCase
         self::assertSame($oldId, (int) self::$pdo->query("SELECT landing_id FROM testimonials WHERE id = $testimonialId")->fetchColumn());
     }
 
+    public function testEmptyFeedIsRefused(): void
+    {
+        $client = new class () implements LandingsApiClientInterface {
+            public function fetchAll(): array
+            {
+                return [];
+            }
+        };
+
+        try {
+            $this->service($client)->run();
+            self::fail('expected UpstreamException');
+        } catch (UpstreamException) {
+        }
+        $last = (new SyncRunRepository(self::$pdo))->last();
+        self::assertSame('failed', $last['status']);
+        self::assertSame(0, (int) self::$pdo->query('SELECT COUNT(*) FROM landings')->fetchColumn());
+    }
+
     public function testUpstreamFailureIsRecordedAndRethrown(): void
     {
         $client = new class () implements LandingsApiClientInterface {
