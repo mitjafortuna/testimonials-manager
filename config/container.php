@@ -89,19 +89,20 @@ return static function (array $config): Container {
     $c->set(TestimonialValidator::class, fn () => new TestimonialValidator());
     $c->set(RatingResolver::class, fn () => new RatingResolver());
     $c->set(TestimonialRepository::class, fn (Container $c) => new TestimonialRepository($c->get(PDO::class)));
+    $c->set(ImageRepository::class, fn (Container $c) => new ImageRepository($c->get(PDO::class)));
+    $c->set(ImageValidator::class, fn () => new ImageValidator((int) $config['upload']['max_bytes']));
+    $c->set(ImageStorage::class, fn () => new ImageStorage($config['upload']['dir']));
     $c->set(TestimonialService::class, fn (Container $c) => new TestimonialService(
         $c->get(TestimonialRepository::class),
         $c->get(LandingRepository::class),
         $c->get(ImageRepository::class),
+        $c->get(ImageStorage::class),
         $c->get(TestimonialValidator::class),
         $c->get(RatingResolver::class),
         $c->get(CurrentUser::class),
     ));
     $c->set(TestimonialController::class, fn (Container $c) => new TestimonialController($c->get(TestimonialService::class)));
 
-    $c->set(ImageRepository::class, fn (Container $c) => new ImageRepository($c->get(PDO::class)));
-    $c->set(ImageValidator::class, fn () => new ImageValidator((int) $config['upload']['max_bytes']));
-    $c->set(ImageStorage::class, fn () => new ImageStorage($config['upload']['dir']));
     $c->set(ImageService::class, fn (Container $c) => new ImageService(
         $c->get(ImageRepository::class),
         $c->get(TestimonialRepository::class),

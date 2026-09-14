@@ -11,6 +11,7 @@ use App\Domain\Testimonial\TestimonialValidator;
 use App\Infrastructure\Repository\ImageRepository;
 use App\Infrastructure\Repository\LandingRepository;
 use App\Infrastructure\Repository\TestimonialRepository;
+use App\Infrastructure\Storage\ImageStorage;
 
 /**
  * @phpstan-import-type Row from TestimonialRepository
@@ -22,6 +23,7 @@ final class TestimonialService
         private readonly TestimonialRepository $testimonials,
         private readonly LandingRepository $landings,
         private readonly ImageRepository $images,
+        private readonly ImageStorage $imageStorage,
         private readonly TestimonialValidator $validator,
         private readonly RatingResolver $ratings,
         private readonly CurrentUser $user,
@@ -91,6 +93,10 @@ final class TestimonialService
     public function delete(int $id): void
     {
         $this->existing($id);
+        $images = $this->images->listByTestimonialIds([$id])[$id] ?? [];
+        foreach ($images as $image) {
+            $this->imageStorage->delete($image['filename'], $image['thumb_filename']);
+        }
         $this->testimonials->delete($id);
     }
 
