@@ -1,0 +1,14 @@
+.git
+.github
+.superpowers
+docs/superpowers
+node_modules
+tests/e2e/node_modules
+tests/e2e/playwright-report
+tests/e2e/test-results
+storage/uploads
+vendor
+.env
+dist
+*.zip
+.DS_Store

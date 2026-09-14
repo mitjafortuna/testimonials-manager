@@ -22,3 +22,5 @@ Rough time spent per phase (owner + AI pairing). Requested by the assignment bri
 | 13 | Bulk actions (select, activate/deactivate/delete) | 1.5h |
 | 14 | Change log (audit trail, per-record history panel) | 2h |
 | 15 | Image processing (downscale, WebP conversion, square crop) | 1.5h |
+| 16 | Release (ZIP workflow, docs, submission checklist) | 1h |
+| **Total** | | **36.5h** |
