@@ -37,7 +37,7 @@ seed-large:    ## generate a large demo dataset (300 products)
 	$(COMPOSE) exec app php database/seed-large.php
 sync:          ## run landing sync from the CLI
 	$(COMPOSE) exec app php bin/sync.php
-e2e:
-	$(COMPOSE) --profile e2e run --rm playwright sh -c "npm ci && npx playwright test"
+e2e:           ## Playwright happy-path against the running app (needs `make up && make seed`)
+	$(COMPOSE) --profile e2e run --rm -e CI=1 playwright sh -c "npm ci && npx playwright test"
 zip:
 	./scripts/build-zip.sh
