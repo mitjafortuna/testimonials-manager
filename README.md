@@ -37,7 +37,7 @@ The release ZIP ships a `vendor/` directory, so Composer is not required.
 | `make lint` / `make stan` | code style (PSR-12) / static analysis (level 6) |
 | `make api` | API suite against a built-in PHP server inside the app container (mirrors CI) |
 | `make e2e` | Playwright end-to-end tests |
-| `make seed-large` | generate ~300 products × 20 countries × 50 testimonials |
+| `make seed-large` | run once on a fresh DB (not idempotent); generates up to 50 testimonials per landing (~150k rows by default) |
 
 Sync source: `POST /api/landings/sync` and `bin/sync.php` read from the upstream API using `LANDINGS_API_URL`/`LANDINGS_API_KEY`. Set `LANDINGS_API_FIXTURE=tests/fixtures/landings.json` to replay the captured response instead (this is what `make api` and CI do).
 
@@ -50,6 +50,14 @@ See [docs/superpowers/specs/2026-09-13-testimonials-manager-design.md](docs/supe
 Filled in as phases land. Known so far:
 
 - Frontend assets (Bootstrap, jQuery, fonts) are loaded from CDNs — the admin needs internet access; vendoring them is a one-line change if required.
+- Sync is full-table, not incremental: every run re-fetches and re-upserts all upstream landings. Fine at today's scale (170 rows, thousands at most); an incremental sync (e.g. an upstream `updated_since` filter) would be the next step at real scale.
+- `ON DUPLICATE KEY UPDATE ... VALUES(col)` is deprecated (without an alias) as of MySQL 8.0.20, but is kept because it also has to run on MariaDB 10.4+, which does not support the `AS` alias form.
+- CSRF protection is a custom `X-Requested-With` header instead of synchroniser tokens: a custom header forces the browser to preflight the request, and since we emit no CORS headers, a cross-origin request can never carry it. Simpler than per-form tokens for a single-origin admin SPA.
+- `landings.updated_at` bumps on every sync run because `last_synced_at` is one of the columns MySQL's `ON UPDATE CURRENT_TIMESTAMP` watches — so "updated" in the schema doesn't mean "content changed", only "last touched by sync".
+- The sync endpoints (`POST /api/landings/sync`, `GET /api/sync/last`) are unauthenticated until the login phase lands; they're not part of the public product surface, but this is a known gap in the interim.
+- Docker/CI run PHP 8.2 even though the code is written to stay 8.1-compatible; the CI matrix now runs both 8.1 and 8.2 so the compatibility claim is actually checked (see `.github/workflows/ci.yml`).
+- Media will be served through a PHP passthrough (`GET /media/{filename}`) rather than directly by Apache, once the images phase lands — portability (works the same under XAMPP, Docker, Fly) over raw static-file throughput.
+- Product/landing counts are computed per request rather than cached/denormalised — simpler and correct-by-construction; revisit only if the counts query shows up as a bottleneck.
 
 ## How this was built
 
