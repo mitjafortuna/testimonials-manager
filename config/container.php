@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Application\AiService;
 use App\Application\AuthService;
 use App\Application\ImageService;
 use App\Application\LandingOverviewService;
@@ -9,10 +10,15 @@ use App\Application\LandingSyncService;
 use App\Application\ProductSearchService;
 use App\Application\TestimonialService;
 use App\Container;
+use App\Domain\Ai\ClaudeProvider;
+use App\Domain\Ai\GeminiProvider;
+use App\Domain\Ai\OpenAiProvider;
+use App\Domain\Ai\ProviderRegistry;
 use App\Domain\Auth\CurrentUser;
 use App\Domain\Image\ImageValidator;
 use App\Domain\Testimonial\RatingResolver;
 use App\Domain\Testimonial\TestimonialValidator;
+use App\Http\Controller\AiController;
 use App\Http\Controller\AuthController;
 use App\Http\Controller\HealthController;
 use App\Http\Controller\HomeController;
@@ -120,6 +126,14 @@ return static function (array $config): Container {
     ));
     $c->set(ImageController::class, fn (Container $c) => new ImageController($c->get(ImageService::class)));
     $c->set(MediaController::class, fn (Container $c) => new MediaController($c->get(ImageStorage::class)));
+
+    $c->set(ProviderRegistry::class, fn () => new ProviderRegistry([
+        'openai' => new OpenAiProvider(),
+        'gemini' => new GeminiProvider(),
+        'claude' => new ClaudeProvider(),
+    ]));
+    $c->set(AiService::class, fn (Container $c) => new AiService($c->get(ProviderRegistry::class)));
+    $c->set(AiController::class, fn (Container $c) => new AiController($c->get(AiService::class)));
 
     return $c;
 };
