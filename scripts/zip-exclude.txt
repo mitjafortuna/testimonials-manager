@@ -1,5 +1,6 @@
 .git
 .github
+.claude
 .superpowers
 docs/superpowers
 node_modules
@@ -10,5 +11,8 @@ storage/uploads
 vendor
 .env
 dist
+build
+.phpunit.cache
+.php-cs-fixer.cache
 *.zip
 .DS_Store

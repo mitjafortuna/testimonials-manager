@@ -63,6 +63,15 @@ final class ImagesTest extends ApiTestCase
         $this->request('DELETE', "/api/testimonials/$id");
     }
 
+    public function testRejectsInvalidCropMode(): void
+    {
+        $id = $this->newTestimonial();
+        $r = $this->upload("/api/testimonials/$id/images", ['images[0]' => ImageFixtures::jpeg(sys_get_temp_dir())], ['crop' => 'circle']);
+        self::assertSame(422, $r['status'], json_encode($r['json']));
+        self::assertArrayHasKey('crop', $r['json']['error']['fields']);
+        $this->request('DELETE', "/api/testimonials/$id");
+    }
+
     public function testRejectsNonImageAndEmptyBatch(): void
     {
         $id = $this->newTestimonial();
