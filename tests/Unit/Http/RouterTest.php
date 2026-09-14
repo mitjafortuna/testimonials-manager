@@ -35,6 +35,12 @@ final class RouterTest extends TestCase
         self::assertSame(['id' => '42'], $this->router->match('PATCH', '/api/testimonials/42')->params);
     }
 
+    public function testHeadIsRoutedAsGet(): void
+    {
+        $m = $this->router->match('HEAD', '/api/products');
+        self::assertSame(['ProductsCtl', 'index'], $m->handler);
+    }
+
     public function testTrailingSlashIsTolerated(): void
     {
         self::assertSame(['ProductsCtl', 'index'], $this->router->match('GET', '/api/products/')->handler);

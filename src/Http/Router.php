@@ -46,6 +46,9 @@ final class Router
     public function match(string $method, string $path): RouteMatch
     {
         $method = strtoupper($method);
+        if ($method === 'HEAD') {
+            $method = 'GET';
+        }
         $pathMatched = false;
         foreach ($this->routes as $route) {
             if (!preg_match($route['regex'], $path, $m)) {

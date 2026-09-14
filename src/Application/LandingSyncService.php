@@ -66,7 +66,12 @@ final class LandingSyncService
                 throw $e;
             }
             if ($runId !== null) {
-                $this->runs->finish($runId, 'failed', $this->clock->now()->format('Y-m-d H:i:s'), 0, 0, 0, $e->getMessage());
+                try {
+                    $this->runs->finish($runId, 'failed', $this->clock->now()->format('Y-m-d H:i:s'), 0, 0, 0, $e->getMessage());
+                } catch (\Throwable $finishError) {
+                    // Recording the failure must never hide the original failure.
+                    error_log(sprintf('[sync] failed to record failed run #%d: %s', $runId, $finishError->getMessage()));
+                }
             }
             throw $e;
         } finally {
