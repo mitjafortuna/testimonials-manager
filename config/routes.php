@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controller\AiController;
 use App\Http\Controller\AuthController;
 use App\Http\Controller\HealthController;
 use App\Http\Controller\HomeController;
@@ -29,5 +30,8 @@ return static function (Router $r): void {
     $r->delete('/api/testimonials/{id}', [TestimonialController::class, 'destroy']);
     $r->post('/api/testimonials/{id}/images', [ImageController::class, 'store']);
     $r->delete('/api/images/{id}', [ImageController::class, 'destroy']);
+    $r->get('/api/ai/providers', [AiController::class, 'providers']);
+    $r->post('/api/ai/translate', [AiController::class, 'translate']);
+    $r->post('/api/ai/author-name', [AiController::class, 'authorName']);
     $r->get('/media/{filename}', [MediaController::class, 'show']);
 };

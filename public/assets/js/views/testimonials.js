@@ -52,7 +52,7 @@
 
     const reload = () => Router.navigate(`#/landings/${landingId}`);
     document.getElementById('add-testimonial').addEventListener('click', () =>
-      TestimonialForm.open({ landingId, testimonial: null, onSaved: reload }));
+      TestimonialForm.open({ landingId, country: L.country, testimonial: null, onSaved: reload }));
 
     const byId = Object.fromEntries(res.data.map((t) => [t.id, t]));
     document.getElementById('testimonials-table').addEventListener('click', async (e) => {
@@ -60,7 +60,7 @@
       if (!tr) return;
       const t = byId[tr.dataset.id];
       if (e.target.closest('.tm-edit')) {
-        TestimonialForm.open({ landingId, testimonial: t, onSaved: reload });
+        TestimonialForm.open({ landingId, country: L.country, testimonial: t, onSaved: reload });
       } else if (e.target.closest('.tm-delete')) {
         const ok = await Confirm.ask({ title: 'Delete testimonial', body: `Delete the testimonial by ${t.author_name}? This cannot be undone.`, confirmLabel: 'Delete' });
         if (!ok) return;
