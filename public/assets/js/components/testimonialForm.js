@@ -2,6 +2,7 @@
   'use strict';
   let el, modal;
   let markDirty = () => {};
+  let currentCountry = '';
 
   function ensure() {
     if (el) return;
@@ -18,6 +19,14 @@
           <div class="col-md-3"><label class="form-label" for="tf-rating">Rating</label><select class="form-select" id="tf-rating" name="rating"><option value="random">Random (4–5 at display)</option><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select><div class="invalid-feedback"></div></div>
           <div class="col-md-3"><label class="form-label" for="tf-sort">Sort order</label><input class="form-control" id="tf-sort" name="sort_order" type="number" min="0" step="1" placeholder="auto"><div class="invalid-feedback"></div></div>
           <div class="col-12"><label class="form-label" for="tf-text">Text <span class="text-muted small" id="tf-count">0 / 2000</span></label><textarea class="form-control" id="tf-text" name="text" rows="5" maxlength="2000" required></textarea><div class="invalid-feedback"></div></div>
+          <div class="col-12">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <select class="form-select form-select-sm w-auto" id="tf-ai-provider" aria-label="AI provider"></select>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="tf-ai-translate"><i class="bi bi-translate me-1"></i>Translate from EN</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="tf-ai-name"><i class="bi bi-magic me-1"></i>Suggest name</button>
+              <span class="text-muted small" id="tf-ai-status"></span>
+            </div>
+          </div>
           <div class="col-md-6"><label class="form-label d-block">Gender</label>
             <div class="btn-group" role="group" aria-label="Gender">
               <input type="radio" class="btn-check" name="gender" id="tf-g-m" value="male"><label class="btn btn-outline-secondary" for="tf-g-m">Male</label>
@@ -40,6 +49,41 @@
     const form = el.querySelector('#testimonial-form');
     form.addEventListener('input', () => markDirty());
     form.addEventListener('change', () => markDirty());
+
+    const providerSelect = el.querySelector('#tf-ai-provider');
+    Api.get('/api/ai/providers').then((res) => {
+      providerSelect.innerHTML = res.data.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+    }).catch(() => { providerSelect.innerHTML = '<option value="">AI unavailable</option>'; });
+
+    const aiStatus = el.querySelector('#tf-ai-status');
+    el.querySelector('#tf-ai-translate').addEventListener('click', async () => {
+      const f = el.querySelector('#testimonial-form');
+      if (!f.text.value.trim()) { Toast.error('Type some text first'); return; }
+      aiStatus.textContent = 'Translating…';
+      try {
+        const res = await Api.post('/api/ai/translate', { provider: providerSelect.value, text: f.text.value, target_country: currentCountry });
+        f.text.value = res.text;
+        el.querySelector('#tf-count').textContent = `${res.text.length} / 2000`;
+        aiStatus.textContent = '';
+        markDirty();
+      } catch (err) {
+        aiStatus.textContent = '';
+        Toast.error('Translate failed: ' + err.message);
+      }
+    });
+    el.querySelector('#tf-ai-name').addEventListener('click', async () => {
+      const f = el.querySelector('#testimonial-form');
+      aiStatus.textContent = 'Suggesting…';
+      try {
+        const res = await Api.post('/api/ai/author-name', { provider: providerSelect.value, country: currentCountry, gender: f.gender.value });
+        f.author_name.value = res.name;
+        aiStatus.textContent = '';
+        markDirty();
+      } catch (err) {
+        aiStatus.textContent = '';
+        Toast.error('Suggest name failed: ' + err.message);
+      }
+    });
   }
 
   function clearErrors() {
@@ -84,8 +128,9 @@
   }
 
   window.TestimonialForm = {
-    open({ landingId, testimonial, onSaved }) {
+    open({ landingId, country, testimonial, onSaved }) {
       ensure();
+      currentCountry = country || '';
       clearErrors();
       fill(testimonial);
       el.querySelector('.modal-title').textContent = testimonial ? `Edit testimonial #${testimonial.id}` : 'New testimonial';
