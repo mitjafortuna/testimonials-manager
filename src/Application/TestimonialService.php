@@ -20,6 +20,8 @@ use App\Infrastructure\Storage\ImageStorage;
  */
 final class TestimonialService
 {
+    public const BULK_ACTIONS = ['activate', 'deactivate', 'delete'];
+
     public function __construct(
         private readonly TestimonialRepository $testimonials,
         private readonly LandingRepository $landings,
@@ -180,6 +182,35 @@ final class TestimonialService
             throw new ValidationException(['source_landing_id' => 'Source must belong to the same product']);
         }
         return [$target, $source];
+    }
+
+    /**
+     * @param  list<int> $ids
+     * @return array{data: list<array<string,mixed>>, meta: array{inherited: bool, source_landing_id: int, landing: array{id:int,country:string,is_master:bool,title:string,url:string}}}
+     */
+    public function bulkUpdate(int $landingId, array $ids, string $action): array
+    {
+        $this->activeLanding($landingId);
+        if (!in_array($action, self::BULK_ACTIONS, true)) {
+            throw new ValidationException(['action' => 'Must be one of: ' . implode(', ', self::BULK_ACTIONS)]);
+        }
+        $owned = array_column($this->testimonials->listByLanding($landingId), 'id');
+        $ids = array_values(array_intersect($ids, $owned));
+        if ($ids === []) {
+            throw new ValidationException(['ids' => 'No matching testimonials for this landing']);
+        }
+        if ($action === 'delete') {
+            $images = $this->images->listByTestimonialIds($ids);
+            foreach ($ids as $id) {
+                foreach ($images[$id] ?? [] as $image) {
+                    $this->imageStorage->delete($image['filename'], $image['thumb_filename']);
+                }
+            }
+            $this->testimonials->bulkDelete($ids);
+        } else {
+            $this->testimonials->bulkSetActive($ids, $action === 'activate', $this->user->id());
+        }
+        return $this->listForLanding($landingId);
     }
 
     /** @return Row */

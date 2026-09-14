@@ -28,6 +28,7 @@ return static function (Router $r): void {
     $r->patch('/api/landings/{id}/testimonials/reorder', [TestimonialController::class, 'reorder']);
     $r->get('/api/landings/{id}/testimonials/copy-preview', [TestimonialController::class, 'copyPreview']);
     $r->post('/api/landings/{id}/testimonials/copy', [TestimonialController::class, 'copy']);
+    $r->post('/api/landings/{id}/testimonials/bulk', [TestimonialController::class, 'bulk']);
     $r->get('/api/testimonials/{id}', [TestimonialController::class, 'show']);
     $r->patch('/api/testimonials/{id}', [TestimonialController::class, 'update']);
     $r->delete('/api/testimonials/{id}', [TestimonialController::class, 'destroy']);

@@ -100,4 +100,28 @@ final class TestimonialsTest extends ApiTestCase
         self::assertSame(200, $r['status']);
         self::assertGreaterThan(0, count($r['json']['data']));
     }
+
+    public function testBulkActivateDeactivateDelete(): void
+    {
+        $created = [];
+        foreach (['Bulk A', 'Bulk B'] as $name) {
+            $r = $this->request('POST', '/api/landings/61763/testimonials', ['author_name' => $name, 'text' => 't']);
+            $created[] = $r['json']['testimonial']['id'];
+        }
+        $r = $this->request('POST', '/api/landings/61763/testimonials/bulk', ['ids' => $created, 'action' => 'deactivate']);
+        self::assertSame(200, $r['status']);
+        $byId = array_column($r['json']['data'], null, 'id');
+        self::assertFalse($byId[$created[0]]['is_active']);
+
+        $r = $this->request('POST', '/api/landings/61763/testimonials/bulk', ['ids' => $created, 'action' => 'delete']);
+        self::assertSame(200, $r['status']);
+        $remainingIds = array_column($r['json']['data'], 'id');
+        self::assertEmpty(array_intersect($created, $remainingIds));
+    }
+
+    public function testBulkRejectsUnknownAction(): void
+    {
+        $r = $this->request('POST', '/api/landings/61763/testimonials/bulk', ['ids' => [1], 'action' => 'nope']);
+        self::assertSame(422, $r['status']);
+    }
 }
