@@ -14,6 +14,8 @@ make up && make seed
 open http://localhost:8080
 ```
 
+Log in with **admin / admin123** (seeded demo user).
+
 ## Run on XAMPP / LAMP
 
 Two deployment layouts are supported:
@@ -54,7 +56,7 @@ Filled in as phases land. Known so far:
 - `ON DUPLICATE KEY UPDATE ... VALUES(col)` is deprecated (without an alias) as of MySQL 8.0.20, but is kept because it also has to run on MariaDB 10.4+, which does not support the `AS` alias form.
 - CSRF protection is a custom `X-Requested-With` header instead of synchroniser tokens: a custom header forces the browser to preflight the request, and since we emit no CORS headers, a cross-origin request can never carry it. Simpler than per-form tokens for a single-origin admin SPA.
 - `landings.updated_at` bumps on every sync run because `last_synced_at` is one of the columns MySQL's `ON UPDATE CURRENT_TIMESTAMP` watches — so "updated" in the schema doesn't mean "content changed", only "last touched by sync".
-- The sync endpoints (`POST /api/landings/sync`, `GET /api/sync/last`) are unauthenticated until the login phase lands; they're not part of the public product surface, but this is a known gap in the interim.
+- Single seeded user, no registration/roles/password reset (per brief); PHP file sessions.
 - Docker/CI run PHP 8.2 even though the code is written to stay 8.1-compatible; the CI matrix now runs both 8.1 and 8.2 so the compatibility claim is actually checked (see `.github/workflows/ci.yml`).
 - Media will be served through a PHP passthrough (`GET /media/{filename}`) rather than directly by Apache, once the images phase lands — portability (works the same under XAMPP, Docker, Fly) over raw static-file throughput.
 - Product/landing counts are computed per request rather than cached/denormalised — simpler and correct-by-construction; revisit only if the counts query shows up as a bottleneck.
