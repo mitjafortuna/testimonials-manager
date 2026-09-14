@@ -4,11 +4,36 @@
 
   const genderIcon = (g) => ({ male: 'bi-gender-male', female: 'bi-gender-female', unisex: 'bi-gender-ambiguous' }[g] || 'bi-gender-ambiguous');
 
+  let dragEl = null;
+  function enableReorder(tbody, onReordered) {
+    tbody.querySelectorAll('tr[draggable="true"]').forEach((tr) => {
+      tr.addEventListener('dragstart', () => { dragEl = tr; tr.classList.add('tm-dragging'); });
+      tr.addEventListener('dragend', () => { tr.classList.remove('tm-dragging'); dragEl = null; });
+      tr.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!dragEl || dragEl === tr) return;
+        const rect = tr.getBoundingClientRect();
+        const before = (e.clientY - rect.top) < rect.height / 2;
+        tr.parentNode.insertBefore(dragEl, before ? tr : tr.nextSibling);
+      });
+      tr.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        const ids = [...tbody.querySelectorAll('tr[data-id]')].map((r) => parseInt(r.dataset.id, 10));
+        try {
+          await onReordered(ids);
+        } catch (err) {
+          Toast.error('Could not save order: ' + err.message);
+        }
+      });
+    });
+  }
+
   function row(t, inherited) {
     const stars = `<span class="tm-stars" title="${t.rating === null ? 'Random: shown between 4.0 and 5.0' : 'Fixed rating'}">★ ${t.rating_display.toFixed(1)}</span>${t.rating === null ? ' <span class="badge bg-warning text-dark" title="Random rating">🎲</span>' : ''}`;
     const thumbs = (t.images || []).slice(0, 3).map((i) => `<img src="media/${esc(i.thumb_filename)}" alt="" class="tm-thumb">`).join('');
     return `
-      <tr data-id="${t.id}">
+      <tr data-id="${t.id}" ${inherited ? '' : 'draggable="true"'}>
+        <td class="tm-drag-handle text-muted" title="${inherited ? '' : 'Drag to reorder'}">${inherited ? '' : '<i class="bi bi-grip-vertical"></i>'}</td>
         <td class="text-muted tabular">${t.sort_order}</td>
         <td><i class="bi ${genderIcon(t.gender)} me-1 text-muted"></i>${esc(t.author_name)}${t.url ? ` <a href="${esc(t.url)}" target="_blank" rel="noopener" title="${esc(t.url)}"><i class="bi bi-box-arrow-up-right small"></i></a>` : ''}</td>
         <td class="tm-text" title="${esc(t.text)}">${esc(t.text)}</td>
@@ -46,8 +71,8 @@
       </div>
       ${inherited ? `<div class="alert alert-warning d-flex align-items-center gap-2"><i class="bi bi-info-circle-fill"></i><div><strong>Inherited from the English master.</strong> This landing has no testimonials of its own, so the EN set below is what visitors see. Add a testimonial here to start a local set.</div></div>` : ''}
       <div class="card"><div class="table-responsive"><table class="table table-hover align-middle mb-0" id="testimonials-table">
-        <thead><tr><th>#</th><th>Author</th><th>Text</th><th>Rating</th><th>Images</th><th>Active</th><th></th></tr></thead>
-        <tbody>${res.data.map((t) => row(t, inherited)).join('') || '<tr><td colspan="7" class="text-muted text-center py-4">No testimonials yet.</td></tr>'}</tbody>
+        <thead><tr><th></th><th>#</th><th>Author</th><th>Text</th><th>Rating</th><th>Images</th><th>Active</th><th></th></tr></thead>
+        <tbody>${res.data.map((t) => row(t, inherited)).join('') || '<tr><td colspan="8" class="text-muted text-center py-4">No testimonials yet.</td></tr>'}</tbody>
       </table></div></div>`;
 
     const reload = () => Router.navigate(`#/landings/${landingId}`);
@@ -96,5 +121,12 @@
       };
       attempt();
     });
+
+    if (!inherited) {
+      enableReorder(document.querySelector('#testimonials-table tbody'), async (ids) => {
+        await Api.patch(`/api/landings/${landingId}/testimonials/reorder`, { ids });
+        Toast.success('Order saved');
+      });
+    }
   };
 })();

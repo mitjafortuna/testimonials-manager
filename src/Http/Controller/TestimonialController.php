@@ -6,6 +6,7 @@ namespace App\Http\Controller;
 
 use App\Application\TestimonialService;
 use App\Domain\Exception\NotFoundException;
+use App\Domain\Exception\ValidationException;
 use App\Http\Request;
 use App\Http\Response;
 
@@ -39,6 +40,15 @@ final class TestimonialController
     {
         $this->service->delete(self::id($request, 'id'));
         return Response::noContent();
+    }
+
+    public function reorder(Request $request): Response
+    {
+        $raw = $request->input('ids');
+        if (!is_array($raw)) {
+            throw new ValidationException(['ids' => 'Must be an array of testimonial ids']);
+        }
+        return Response::json($this->service->reorder(self::id($request, 'id'), array_map('intval', $raw)));
     }
 
     /** Route ids must be positive integers; anything else is a 404, not a 500. */

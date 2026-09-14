@@ -62,6 +62,22 @@ final class ImageRepository
         return $stmt->rowCount() === 1;
     }
 
+    /** @param list<int> $ids */
+    public function reorder(int $testimonialId, array $ids): void
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare('UPDATE testimonial_images SET sort_order = ? WHERE id = ? AND testimonial_id = ?');
+            foreach ($ids as $i => $id) {
+                $stmt->execute([$i, $id, $testimonialId]);
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
     /**
      * @param array<string,mixed> $r
      * @return ImgRow

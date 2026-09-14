@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   function thumbCard(img) {
-    return `<div class="tm-img-card" data-image-id="${img.id}">
+    return `<div class="tm-img-card" draggable="true" data-image-id="${img.id}">
       <img src="media/${esc(img.thumb_filename)}" alt="" width="96" height="96">
       <button type="button" class="btn btn-sm btn-danger tm-img-delete" title="Delete image" aria-label="Delete image"><i class="bi bi-x-lg"></i></button>
       <small class="text-muted d-block text-truncate">${img.width}×${img.height}</small>
@@ -36,7 +36,7 @@
         status.saving();
         try {
           const res = await Api.upload(`/api/testimonials/${testimonial.id}/images`, fd);
-          res.images.forEach((img) => { images.push(img); grid.insertAdjacentHTML('beforeend', thumbCard(img)); });
+          res.images.forEach((img) => { images.push(img); grid.insertAdjacentHTML('beforeend', thumbCard(img)); wireDrag(grid.lastElementChild); });
           testimonial.images = images;
           status.saved();
           Toast.success(`${res.images.length} image${res.images.length === 1 ? '' : 's'} uploaded`);
@@ -72,6 +72,30 @@
           Toast.error('Could not delete image: ' + err.message);
         }
       });
+
+      let dragImg = null;
+      grid.querySelectorAll('.tm-img-card').forEach(wireDrag);
+      function wireDrag(card) {
+        card.addEventListener('dragstart', () => { dragImg = card; card.classList.add('tm-dragging'); });
+        card.addEventListener('dragend', () => { card.classList.remove('tm-dragging'); dragImg = null; });
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          if (!dragImg || dragImg === card) return;
+          const rect = card.getBoundingClientRect();
+          const before = (e.clientX - rect.left) < rect.width / 2;
+          card.parentNode.insertBefore(dragImg, before ? card : card.nextSibling);
+        });
+        card.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          const ids = [...grid.querySelectorAll('.tm-img-card')].map((c) => parseInt(c.dataset.imageId, 10));
+          try {
+            await Api.patch(`/api/testimonials/${testimonial.id}/images/reorder`, { ids });
+            Toast.success('Order saved');
+          } catch (err) {
+            Toast.error('Could not save order: ' + err.message);
+          }
+        });
+      }
     },
   };
 

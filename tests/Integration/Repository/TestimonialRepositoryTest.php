@@ -82,4 +82,17 @@ final class TestimonialRepositoryTest extends DatabaseTestCase
         self::assertFalse($this->repo->delete($id));
         self::assertNull($this->repo->find($id));
     }
+
+    public function testReorderAssignsSortOrderByPosition(): void
+    {
+        $a = $this->repo->insert(1, $this->fields(), null);
+        $b = $this->repo->insert(1, $this->fields(), null);
+        $c = $this->repo->insert(1, $this->fields(), null);
+
+        $this->repo->reorder(1, [$c, $a, $b]);
+
+        $rows = $this->repo->listByLanding(1);
+        self::assertSame([$c, $a, $b], array_column($rows, 'id'));
+        self::assertSame([0, 1, 2], array_column($rows, 'sort_order'));
+    }
 }

@@ -6,6 +6,7 @@ namespace App\Application;
 
 use App\Domain\Auth\CurrentUser;
 use App\Domain\Exception\NotFoundException;
+use App\Domain\Exception\ValidationException;
 use App\Domain\Testimonial\RatingResolver;
 use App\Domain\Testimonial\TestimonialValidator;
 use App\Infrastructure\Repository\ImageRepository;
@@ -98,6 +99,25 @@ final class TestimonialService
             $this->imageStorage->delete($image['filename'], $image['thumb_filename']);
         }
         $this->testimonials->delete($id);
+    }
+
+    /**
+     * @param list<int> $ids
+     * @return array{data: list<array<string,mixed>>, meta: array{inherited: bool, source_landing_id: int, landing: array{id:int,country:string,is_master:bool,title:string,url:string}}}
+     */
+    public function reorder(int $landingId, array $ids): array
+    {
+        $this->activeLanding($landingId);
+        $existingIds = array_column($this->testimonials->listByLanding($landingId), 'id');
+        $sortedExisting = $existingIds;
+        sort($sortedExisting);
+        $sortedGiven = $ids;
+        sort($sortedGiven);
+        if ($sortedExisting !== $sortedGiven) {
+            throw new ValidationException(['ids' => 'Must list exactly the testimonials belonging to this landing']);
+        }
+        $this->testimonials->reorder($landingId, $ids);
+        return $this->listForLanding($landingId);
     }
 
     /**

@@ -52,4 +52,17 @@ final class ImageRepositoryTest extends DatabaseTestCase
         self::$pdo->exec("DELETE FROM testimonials WHERE id = {$this->t1}");
         self::assertSame([], $this->repo->listByTestimonialIds([$this->t1]));
     }
+
+    public function testReorderAssignsSortOrderByPosition(): void
+    {
+        $img1 = $this->repo->insert($this->t1, $this->data('a'), null);
+        $img2 = $this->repo->insert($this->t1, $this->data('b'), null);
+        $img3 = $this->repo->insert($this->t1, $this->data('c'), null);
+
+        $this->repo->reorder($this->t1, [$img3, $img1, $img2]);
+
+        $rows = $this->repo->listByTestimonialIds([$this->t1])[$this->t1];
+        self::assertSame([$img3, $img1, $img2], array_column($rows, 'id'));
+        self::assertSame([0, 1, 2], array_column($rows, 'sort_order'));
+    }
 }

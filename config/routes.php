@@ -25,10 +25,12 @@ return static function (Router $r): void {
     $r->get('/api/products/{sku}/landings', [ProductController::class, 'landings']);
     $r->get('/api/landings/{id}/testimonials', [TestimonialController::class, 'index']);
     $r->post('/api/landings/{id}/testimonials', [TestimonialController::class, 'store']);
+    $r->patch('/api/landings/{id}/testimonials/reorder', [TestimonialController::class, 'reorder']);
     $r->get('/api/testimonials/{id}', [TestimonialController::class, 'show']);
     $r->patch('/api/testimonials/{id}', [TestimonialController::class, 'update']);
     $r->delete('/api/testimonials/{id}', [TestimonialController::class, 'destroy']);
     $r->post('/api/testimonials/{id}/images', [ImageController::class, 'store']);
+    $r->patch('/api/testimonials/{id}/images/reorder', [ImageController::class, 'reorder']);
     $r->delete('/api/images/{id}', [ImageController::class, 'destroy']);
     $r->get('/api/ai/providers', [AiController::class, 'providers']);
     $r->post('/api/ai/translate', [AiController::class, 'translate']);

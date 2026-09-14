@@ -68,6 +68,19 @@ final class ImagesTest extends ApiTestCase
         self::assertSame(404, $this->raw('/media/nope.jpg')['status']);
     }
 
+    public function testReorderImages(): void
+    {
+        $id = $this->newTestimonial();
+        $tmp = sys_get_temp_dir();
+        $up = $this->upload("/api/testimonials/$id/images", ['images[0]' => ImageFixtures::png($tmp), 'images[1]' => ImageFixtures::jpeg($tmp)]);
+        $ids = array_column($up['json']['images'], 'id');
+        $reversed = array_reverse($ids);
+        $r = $this->request('PATCH', "/api/testimonials/$id/images/reorder", ['ids' => $reversed]);
+        self::assertSame(200, $r['status']);
+        self::assertSame($reversed, array_column($r['json']['images'], 'id'));
+        $this->request('DELETE', "/api/testimonials/$id");
+    }
+
     /** @return array{status:int,content_type:string,body:string} */
     private function raw(string $path): array
     {
