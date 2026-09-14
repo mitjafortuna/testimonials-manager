@@ -22,6 +22,8 @@ fly deploy -a tm-dfvu --ha=false
 
 The release command (`php bin/install.php`) creates the schema and demo data on first deploy and is a no-op afterwards.
 
+**Known Fly.io quirk:** `release_command` runs on a temporary machine without the app's mounted volumes, so `seed-images.php` (invoked at the end of `install.php`) writes its demo photos to that machine's throwaway filesystem, not to the persistent `uploads` volume — the very first deploy needs one manual re-seed onto the real app machine (see Operations below). The database schema/seed apply fine from `release_command` since MySQL is reached over the network, not the filesystem; only the image files are affected. Only the first deploy after volume creation needs this — the volume then persists the images across every future deploy.
+
 ## Continuous deployment
 
 `.github/workflows/deploy.yml` runs `flyctl deploy --remote-only` on every push to `main`, using the `FLY_API_TOKEN` repository secret.

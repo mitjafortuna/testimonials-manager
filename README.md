@@ -3,7 +3,7 @@
 Admin application for managing customer testimonials on landing pages — per product (parent SKU) and per country.
 Built as the DFVU full-stack practical assignment. **PHP 8.1+ without a framework, MySQL 8, vanilla JS + Bootstrap.**
 
-> Status: in progress — see [docs/time-log.md](docs/time-log.md). Live demo link and credentials will appear here after phase 9.
+> **Live demo:** https://tm-dfvu.fly.dev — sign in with `admin` / `admin123`. (Free-tier machine: the first request after idle takes a few seconds.)
 
 ## Quick start (Docker)
 
@@ -45,7 +45,7 @@ Sync source: `POST /api/landings/sync` and `bin/sync.php` read from the upstream
 
 ## Deployment
 
-See [deploy/README.md](deploy/README.md) for hosting on Fly.io: two apps (`tm-dfvu` for the PHP/Apache image, `tm-dfvu-db` for MySQL on a private network), `bin/install.php` as an idempotent release command, and `.github/workflows/deploy.yml` for continuous deployment on push to `main`. The live demo link will be added here once the apps are actually provisioned.
+See [deploy/README.md](deploy/README.md) for hosting on Fly.io: two apps (`tm-dfvu` for the PHP/Apache image, `tm-dfvu-db` for MySQL on a private network), `bin/install.php` as an idempotent release command, and `.github/workflows/deploy.yml` for continuous deployment on push to `main`.
 
 ## Architecture
 
