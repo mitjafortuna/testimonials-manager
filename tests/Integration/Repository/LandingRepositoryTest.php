@@ -34,6 +34,8 @@ final class LandingRepositoryTest extends DatabaseTestCase
         $r2 = $this->landings->upsertMany([$this->row(1, 'EN'), $this->row(2, 'SI', 'https://changed')], '2026-09-13 11:00:00');
         self::assertSame(['added' => 0, 'updated' => 1], $r2);
         self::assertSame('https://changed', $this->landings->find(2)['url']);
+        $r3 = $this->landings->upsertMany([$this->row(1, 'EN'), $this->row(2, 'SI', 'https://changed')], '2026-09-13 12:00:00');
+        self::assertSame(['added' => 0, 'updated' => 0], $r3);
     }
 
     public function testMarkRemovedExceptAndReappear(): void
@@ -42,6 +44,15 @@ final class LandingRepositoryTest extends DatabaseTestCase
         self::assertSame(1, $this->landings->markRemovedExcept([1], '2026-09-13 10:00:00'));
         self::assertNotNull($this->landings->find(2)['removed_at']);
         $this->landings->upsertMany([$this->row(2, 'SI')], '2026-09-13 12:00:00');
+        self::assertNull($this->landings->find(2)['removed_at']);
+    }
+
+    public function testReappearingRemovedLandingCountsAsUpdated(): void
+    {
+        $this->landings->upsertMany([$this->row(1, 'EN'), $this->row(2, 'SI')], '2026-09-13 10:00:00');
+        $this->landings->markRemovedExcept([1], '2026-09-13 10:00:00');
+        $result = $this->landings->upsertMany([$this->row(2, 'SI')], '2026-09-13 12:00:00');
+        self::assertSame(['added' => 0, 'updated' => 1], $result);
         self::assertNull($this->landings->find(2)['removed_at']);
     }
 

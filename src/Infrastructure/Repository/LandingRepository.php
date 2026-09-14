@@ -35,7 +35,7 @@ final class LandingRepository
             ]);
             if (!isset($before[$r['id']])) {
                 $added++;
-            } elseif ($before[$r['id']] !== $this->comparable($r) || $before[$r['id']]['removed'] === true) {
+            } elseif (array_diff_key($before[$r['id']], ['removed' => 1]) !== $this->comparable($r) || $before[$r['id']]['removed'] === true) {
                 $updated++;
             }
         }
@@ -71,7 +71,6 @@ final class LandingRepository
             'product_id' => (int) $r['product_id'], 'country' => (string) $r['country'], 'is_master' => (bool) $r['is_master'],
             'url' => (string) $r['url'], 'title' => (string) $r['title'], 'description' => $r['description'] === null ? null : (string) $r['description'],
             'image' => $r['image'] === null ? null : (string) $r['image'], 'status' => $r['status'] === null ? null : (string) $r['status'],
-            'removed' => false,
         ];
     }
 
