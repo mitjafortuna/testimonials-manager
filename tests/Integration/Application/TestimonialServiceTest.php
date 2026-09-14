@@ -10,13 +10,19 @@ use App\Domain\Exception\NotFoundException;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Testimonial\RatingResolver;
 use App\Domain\Testimonial\TestimonialValidator;
+use App\Infrastructure\Repository\ImageRepository;
 use App\Infrastructure\Repository\LandingRepository;
 use App\Infrastructure\Repository\TestimonialRepository;
+use App\Infrastructure\Storage\ImageStorage;
 use Tests\Integration\DatabaseTestCase;
+use Tests\Support\ImageFixtures;
 
 final class TestimonialServiceTest extends DatabaseTestCase
 {
     private TestimonialService $svc;
+    private ImageRepository $imageRepo;
+    private ImageStorage $imageStorage;
+    private string $uploadDir;
     private int $userId;
 
     protected function setUp(): void
@@ -42,13 +48,25 @@ final class TestimonialServiceTest extends DatabaseTestCase
                 return 'Admin';
             }
         };
+        $this->uploadDir = sys_get_temp_dir() . '/tm-testimonial-delete-' . bin2hex(random_bytes(4));
+        mkdir($this->uploadDir);
+        $this->imageRepo = new ImageRepository(self::$pdo);
+        $this->imageStorage = new ImageStorage($this->uploadDir, 300);
         $this->svc = new TestimonialService(
             new TestimonialRepository(self::$pdo),
             new LandingRepository(self::$pdo),
+            $this->imageRepo,
+            $this->imageStorage,
             new TestimonialValidator(),
             new RatingResolver(fn () => 3),
             $user,
         );
+    }
+
+    protected function tearDown(): void
+    {
+        array_map('unlink', glob($this->uploadDir . '/*') ?: []);
+        rmdir($this->uploadDir);
     }
 
     public function testCreatePresentsWithRatingDisplayAndAudit(): void
@@ -119,5 +137,22 @@ final class TestimonialServiceTest extends DatabaseTestCase
         $this->svc->delete($t['id']);
         $this->expectException(NotFoundException::class);
         $this->svc->get($t['id']);
+    }
+
+    public function testDeleteRemovesImageFilesFromDisk(): void
+    {
+        $t = $this->svc->create(1, ['author_name' => 'Img', 'text' => 'T']);
+        $names = $this->imageStorage->store(ImageFixtures::png(sys_get_temp_dir()), 'png');
+        $this->imageRepo->insert($t['id'], [
+            'filename' => $names['filename'], 'thumb_filename' => $names['thumb_filename'],
+            'mime' => 'image/png', 'size_bytes' => 100, 'width' => 10, 'height' => 10,
+        ], null);
+        self::assertFileExists($this->imageStorage->path($names['filename']));
+        self::assertFileExists($this->imageStorage->path($names['thumb_filename']));
+
+        $this->svc->delete($t['id']);
+
+        self::assertFileDoesNotExist($this->imageStorage->path($names['filename']));
+        self::assertFileDoesNotExist($this->imageStorage->path($names['thumb_filename']));
     }
 }

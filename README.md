@@ -24,7 +24,7 @@ Two deployment layouts are supported:
 Either way:
 
 1. Copy `.env.example` to `.env`; set `DB_HOST=127.0.0.1` and your MySQL credentials.
-2. Import `database/schema.sql` then `database/seed.sql`.
+2. Import `database/schema.sql`, then `database/seed.sql`, then run `php database/seed-images.php` (creates the demo photos).
 3. Make sure `storage/uploads/` is writable by the web server.
 
 The release ZIP ships a `vendor/` directory, so Composer is not required.

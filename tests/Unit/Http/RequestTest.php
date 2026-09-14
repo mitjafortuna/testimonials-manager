@@ -104,6 +104,17 @@ final class RequestTest extends TestCase
         self::assertSame('/subway/api/x', $r->path);
     }
 
+    public function testFromGlobalsIgnoresAScriptNameThatIsNotAPhpFrontController(): void
+    {
+        // The PHP built-in server sets SCRIPT_NAME to the request path whenever the last segment
+        // looks like a file, so /media/<uuid>.png would otherwise have "/media" stripped off it.
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['SCRIPT_NAME'] = '/media/ffffffff-ffff-4fff-8fff-ffffffffffff_thumb.png';
+        $_SERVER['REQUEST_URI'] = '/media/ffffffff-ffff-4fff-8fff-ffffffffffff_thumb.png';
+        $r = Request::fromGlobals();
+        self::assertSame('/media/ffffffff-ffff-4fff-8fff-ffffffffffff_thumb.png', $r->path);
+    }
+
     public function testFromGlobalsStripsSubFolderBaseDownToRoot(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'GET';

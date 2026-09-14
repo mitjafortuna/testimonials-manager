@@ -36,3 +36,9 @@ h1, h2, h3, h4, h5, .tm-heading { font-family: "Montserrat", system-ui, sans-ser
 .tm-stars { color: var(--tm-accent); font-weight: 500; }
 .tm-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; margin-right: 2px; background: var(--tm-light); }
 .tabular { font-variant-numeric: tabular-nums; }
+.tm-img-grid { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .5rem; }
+.tm-img-card { position: relative; width: 96px; }
+.tm-img-card img { width: 96px; height: 96px; object-fit: cover; border-radius: 4px; background: var(--tm-light); }
+.tm-img-delete { position: absolute; top: -6px; right: -6px; padding: 0 .3rem; line-height: 1.4; }
+.tm-dropzone { border: 2px dashed var(--line, #ccd); border-radius: 6px; padding: 1rem; text-align: center; color: #6c757d; cursor: pointer; }
+.tm-dropzone.is-over { border-color: var(--tm-primary); background: rgba(0,96,184,.06); }

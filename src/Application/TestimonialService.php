@@ -8,17 +8,22 @@ use App\Domain\Auth\CurrentUser;
 use App\Domain\Exception\NotFoundException;
 use App\Domain\Testimonial\RatingResolver;
 use App\Domain\Testimonial\TestimonialValidator;
+use App\Infrastructure\Repository\ImageRepository;
 use App\Infrastructure\Repository\LandingRepository;
 use App\Infrastructure\Repository\TestimonialRepository;
+use App\Infrastructure\Storage\ImageStorage;
 
 /**
  * @phpstan-import-type Row from TestimonialRepository
+ * @phpstan-import-type ImgRow from ImageRepository
  */
 final class TestimonialService
 {
     public function __construct(
         private readonly TestimonialRepository $testimonials,
         private readonly LandingRepository $landings,
+        private readonly ImageRepository $images,
+        private readonly ImageStorage $imageStorage,
         private readonly TestimonialValidator $validator,
         private readonly RatingResolver $ratings,
         private readonly CurrentUser $user,
@@ -38,7 +43,9 @@ final class TestimonialService
                 $inherited = true;
             }
         }
-        $data = array_map([$this, 'present'], $this->testimonials->listByLanding($sourceId));
+        $rows = $this->testimonials->listByLanding($sourceId);
+        $images = $this->images->listByTestimonialIds(array_column($rows, 'id'));
+        $data = array_map(fn (array $row) => $this->present($row, $images[$row['id']] ?? []), $rows);
         return [
             'data' => $data,
             'meta' => [
@@ -55,7 +62,8 @@ final class TestimonialService
     /** @return array<string,mixed> */
     public function get(int $id): array
     {
-        return $this->present($this->existing($id));
+        $row = $this->existing($id);
+        return $this->present($row, $this->images->listByTestimonialIds([$id])[$id] ?? []);
     }
 
     /**
@@ -85,16 +93,21 @@ final class TestimonialService
     public function delete(int $id): void
     {
         $this->existing($id);
+        $images = $this->images->listByTestimonialIds([$id])[$id] ?? [];
+        foreach ($images as $image) {
+            $this->imageStorage->delete($image['filename'], $image['thumb_filename']);
+        }
         $this->testimonials->delete($id);
     }
 
     /**
-     * @param Row $row
+     * @param Row          $row
+     * @param list<ImgRow> $images
      * @return array<string,mixed>
      */
-    public function present(array $row): array
+    public function present(array $row, array $images = []): array
     {
-        return $row + ['rating_display' => $this->ratings->display($row['rating']), 'images' => []];
+        return $row + ['rating_display' => $this->ratings->display($row['rating']), 'images' => $images];
     }
 
     /** @return Row */

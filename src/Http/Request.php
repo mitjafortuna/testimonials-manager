@@ -64,9 +64,16 @@ final class Request
      * (e.g. "/tm/public/index.php") — while a request that already targets public/ directly (or the
      * PHP built-in server, which has no .htaccess) keeps it. Try both candidate bases, longest first,
      * and only strip on a segment boundary so "/sub" cannot swallow the start of "/subway/...".
+     *
+     * A base path can only be read off a SCRIPT_NAME that names the PHP front controller. The PHP
+     * built-in server sets SCRIPT_NAME to the request path whenever its last segment looks like a
+     * file, so without this guard "/media/<uuid>.png" would lose its "/media" prefix.
      */
     private static function stripBasePath(string $path, string $scriptName): string
     {
+        if (!str_ends_with(strtolower($scriptName), '.php')) {
+            return $path;
+        }
         $scriptDir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
         $candidates = [];
         if ($scriptDir !== '' && $scriptDir !== '/') {

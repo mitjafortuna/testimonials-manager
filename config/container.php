@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Application\ImageService;
 use App\Application\LandingOverviewService;
 use App\Application\LandingSyncService;
 use App\Application\ProductSearchService;
@@ -9,10 +10,13 @@ use App\Application\TestimonialService;
 use App\Container;
 use App\Domain\Auth\AnonymousUser;
 use App\Domain\Auth\CurrentUser;
+use App\Domain\Image\ImageValidator;
 use App\Domain\Testimonial\RatingResolver;
 use App\Domain\Testimonial\TestimonialValidator;
 use App\Http\Controller\HealthController;
 use App\Http\Controller\HomeController;
+use App\Http\Controller\ImageController;
+use App\Http\Controller\MediaController;
 use App\Http\Controller\ProductController;
 use App\Http\Controller\SyncController;
 use App\Http\Controller\TestimonialController;
@@ -20,10 +24,12 @@ use App\Http\Kernel;
 use App\Http\Middleware\RequireXhrMiddleware;
 use App\Http\Router;
 use App\Infrastructure\Db\PdoFactory;
+use App\Infrastructure\Repository\ImageRepository;
 use App\Infrastructure\Repository\LandingRepository;
 use App\Infrastructure\Repository\ProductRepository;
 use App\Infrastructure\Repository\SyncRunRepository;
 use App\Infrastructure\Repository\TestimonialRepository;
+use App\Infrastructure\Storage\ImageStorage;
 use App\Infrastructure\Upstream\CurlLandingsApiClient;
 use App\Infrastructure\Upstream\CurlTransport;
 use App\Infrastructure\Upstream\FixtureLandingsApiClient;
@@ -83,14 +89,29 @@ return static function (array $config): Container {
     $c->set(TestimonialValidator::class, fn () => new TestimonialValidator());
     $c->set(RatingResolver::class, fn () => new RatingResolver());
     $c->set(TestimonialRepository::class, fn (Container $c) => new TestimonialRepository($c->get(PDO::class)));
+    $c->set(ImageRepository::class, fn (Container $c) => new ImageRepository($c->get(PDO::class)));
+    $c->set(ImageValidator::class, fn () => new ImageValidator((int) $config['upload']['max_bytes']));
+    $c->set(ImageStorage::class, fn () => new ImageStorage($config['upload']['dir']));
     $c->set(TestimonialService::class, fn (Container $c) => new TestimonialService(
         $c->get(TestimonialRepository::class),
         $c->get(LandingRepository::class),
+        $c->get(ImageRepository::class),
+        $c->get(ImageStorage::class),
         $c->get(TestimonialValidator::class),
         $c->get(RatingResolver::class),
         $c->get(CurrentUser::class),
     ));
     $c->set(TestimonialController::class, fn (Container $c) => new TestimonialController($c->get(TestimonialService::class)));
+
+    $c->set(ImageService::class, fn (Container $c) => new ImageService(
+        $c->get(ImageRepository::class),
+        $c->get(TestimonialRepository::class),
+        $c->get(ImageValidator::class),
+        $c->get(ImageStorage::class),
+        $c->get(CurrentUser::class),
+    ));
+    $c->set(ImageController::class, fn (Container $c) => new ImageController($c->get(ImageService::class)));
+    $c->set(MediaController::class, fn (Container $c) => new MediaController($c->get(ImageStorage::class)));
 
     return $c;
 };

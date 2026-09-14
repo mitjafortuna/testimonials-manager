@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Http\Controller\HealthController;
 use App\Http\Controller\HomeController;
+use App\Http\Controller\ImageController;
+use App\Http\Controller\MediaController;
 use App\Http\Controller\ProductController;
 use App\Http\Controller\SyncController;
 use App\Http\Controller\TestimonialController;
@@ -21,4 +23,7 @@ return static function (Router $r): void {
     $r->get('/api/testimonials/{id}', [TestimonialController::class, 'show']);
     $r->patch('/api/testimonials/{id}', [TestimonialController::class, 'update']);
     $r->delete('/api/testimonials/{id}', [TestimonialController::class, 'destroy']);
+    $r->post('/api/testimonials/{id}/images', [ImageController::class, 'store']);
+    $r->delete('/api/images/{id}', [ImageController::class, 'destroy']);
+    $r->get('/media/{filename}', [MediaController::class, 'show']);
 };

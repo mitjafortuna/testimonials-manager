@@ -60,6 +60,7 @@ jobs:
           mkdir -p storage/uploads
           mysql -h127.0.0.1 -uroot -proot testimonials < database/schema.sql
           mysql -h127.0.0.1 -uroot -proot testimonials < database/seed.sql
+          php database/seed-images.php
           (php -S 127.0.0.1:8080 -t public public/index.php > /tmp/php-server.log 2>&1 &)
           sleep 2
       - run: composer test:api

@@ -32,6 +32,7 @@ stan:
 seed:          ## load schema + seed into the dev database
 	$(COMPOSE) exec -T db mysql -uroot -proot testimonials < database/schema.sql
 	$(COMPOSE) exec -T db mysql -uroot -proot testimonials < database/seed.sql
+	$(COMPOSE) exec app php database/seed-images.php
 seed-large:    ## generate a large demo dataset (300 products)
 	$(COMPOSE) exec app php database/seed-large.php
 sync:          ## run landing sync from the CLI
