@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   let el, modal;
-  const FIELDS = ['author_name', 'text', 'rating', 'gender', 'url', 'is_active', 'sort_order'];
+  let markDirty = () => {};
 
   function ensure() {
     if (el) return;
@@ -37,6 +37,9 @@
     document.body.appendChild(el);
     modal = new bootstrap.Modal(el, { backdrop: 'static' });
     el.querySelector('#tf-text').addEventListener('input', (e) => { el.querySelector('#tf-count').textContent = `${e.target.value.length} / 2000`; });
+    const form = el.querySelector('#testimonial-form');
+    form.addEventListener('input', () => markDirty());
+    form.addEventListener('change', () => markDirty());
   }
 
   function clearErrors() {
@@ -93,7 +96,7 @@
       slot.innerHTML = '';
       document.dispatchEvent(new CustomEvent('tm:testimonial-form-open', { detail: { slot, testimonial } }));
       const onChange = () => { el.querySelector('#tf-status').className = 'tm-save-status saving'; el.querySelector('#tf-status').innerHTML = '<i class="bi bi-pencil me-1"></i>Unsaved changes'; };
-      FIELDS.forEach((n) => form[n] && (form[n].oninput = onChange));
+      markDirty = onChange;
       form.onsubmit = async (e) => {
         e.preventDefault();
         clearErrors();
