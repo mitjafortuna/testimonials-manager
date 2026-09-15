@@ -168,6 +168,7 @@
       enableReorder(document.querySelector('#testimonials-table tbody'), async (ids) => {
         await Api.patch(`/api/landings/${landingId}/testimonials/reorder`, { ids });
         Toast.success('Order saved');
+        reload();
       });
     }
 

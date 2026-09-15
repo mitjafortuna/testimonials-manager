@@ -15,21 +15,30 @@
     return '#/products' + (s ? '?' + s : '');
   }
 
+  let refocusSearch = false;
+
   window.Views.products = async function (params, query) {
     const q = { search: query.search || '', page: parseInt(query.page || '1', 10), sort: query.sort || 'sku', dir: query.dir || 'asc' };
     App.el.innerHTML = `
       <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <h1 class="h3 mb-0">Products</h1>
-        <form id="product-search" class="d-flex gap-2" role="search">
-          <input id="product-search-input" class="form-control" type="search" placeholder="Search SKU or description" value="${esc(q.search)}" aria-label="Search products">
+        <form id="product-search" class="d-flex gap-2 tm-search-form" role="search">
+          <input id="product-search-input" class="form-control flex-grow-1" type="search" placeholder="Search SKU or description" value="${esc(q.search)}" aria-label="Search products">
           <button class="btn btn-primary" type="submit">Search</button>
         </form>
       </div>
       <div id="products-table"><div class="text-muted">Loading…</div></div>`;
+    const searchInput = document.getElementById('product-search-input');
     document.getElementById('product-search').addEventListener('submit', (e) => {
       e.preventDefault();
-      Router.navigate(hashFor({ ...q, search: document.getElementById('product-search-input').value.trim(), page: 1 }));
+      refocusSearch = true;
+      Router.navigate(hashFor({ ...q, search: searchInput.value.trim(), page: 1 }));
     });
+    if (refocusSearch) {
+      refocusSearch = false;
+      searchInput.focus();
+      searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+    }
 
     let res;
     try {
