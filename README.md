@@ -25,7 +25,7 @@ Two deployment layouts are supported:
 
 Either way:
 
-1. Copy `.env.example` to `.env`; set `DB_HOST=127.0.0.1` and your MySQL credentials.
+1. The release ZIP already includes a working `.env` (with the real `LANDINGS_API_KEY`) — just edit `DB_HOST=127.0.0.1` and your MySQL credentials in it. From a git checkout instead, copy `.env.example` to `.env` first, then set the same DB values (and `LANDINGS_API_KEY`).
 2. Import `database/schema.sql`, then `database/seed.sql`, then run `php database/seed-images.php` (creates the demo photos).
 3. Make sure `storage/uploads/` and `storage/ratelimit/` are writable by the web server.
 

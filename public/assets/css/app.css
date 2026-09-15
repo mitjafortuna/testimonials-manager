@@ -22,6 +22,7 @@ h1, h2, h3, h4, h5, .tm-heading { font-family: "Montserrat", system-ui, sans-ser
 .btn-secondary-yellow { background: var(--tm-secondary); border-color: var(--tm-secondary); color: var(--tm-dark); font-weight: 500; }
 .card { border: 0; box-shadow: 0 1px 3px rgba(40,40,53,.08); }
 .table thead th { font-family: "Montserrat", sans-serif; font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #6c757d; }
+.tm-search-form { flex: 1 1 22rem; max-width: 32rem; min-width: 0; }
 .tm-sortable { cursor: pointer; user-select: none; }
 .tm-sortable.active { color: var(--tm-primary); }
 .tm-count-badge { background: var(--tm-light); color: var(--tm-text); font-weight: 500; }

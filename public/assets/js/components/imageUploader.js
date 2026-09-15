@@ -97,7 +97,9 @@
           e.preventDefault();
           const ids = [...grid.querySelectorAll('.tm-img-card')].map((c) => parseInt(c.dataset.imageId, 10));
           try {
-            await Api.patch(`/api/testimonials/${testimonial.id}/images/reorder`, { ids });
+            const res = await Api.patch(`/api/testimonials/${testimonial.id}/images/reorder`, { ids });
+            images.splice(0, images.length, ...res.images);
+            testimonial.images = images;
             Toast.success('Order saved');
           } catch (err) {
             Toast.error('Could not save order: ' + err.message);
