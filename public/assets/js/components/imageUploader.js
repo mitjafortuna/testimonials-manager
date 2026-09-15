@@ -82,6 +82,7 @@
       });
 
       let dragImg = null;
+      let reorderSeq = 0;
       grid.querySelectorAll('.tm-img-card').forEach(wireDrag);
       function wireDrag(card) {
         card.addEventListener('dragstart', () => { dragImg = card; card.classList.add('tm-dragging'); });
@@ -96,8 +97,10 @@
         card.addEventListener('drop', async (e) => {
           e.preventDefault();
           const ids = [...grid.querySelectorAll('.tm-img-card')].map((c) => parseInt(c.dataset.imageId, 10));
+          const seq = ++reorderSeq;
           try {
             const res = await Api.patch(`/api/testimonials/${testimonial.id}/images/reorder`, { ids });
+            if (seq !== reorderSeq) return; // a later drag already started/finished; don't clobber it with this stale response
             images.splice(0, images.length, ...res.images);
             testimonial.images = images;
             Toast.success('Order saved');
