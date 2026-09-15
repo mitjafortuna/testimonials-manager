@@ -30,4 +30,13 @@ return [
         'fixture' => Env::get('LANDINGS_API_FIXTURE') ?: null,
     ],
     'session' => ['name' => Env::get('SESSION_NAME', 'tm_session')],
+    'rate_limit' => [
+        // Off under APP_ENV=test: the API/e2e suites log in once per test, back-to-back, from one IP.
+        'enabled' => Env::get('APP_ENV', 'prod') !== 'test',
+        'dir' => $root . '/storage/ratelimit',
+        'login_limit' => (int) Env::get('RATE_LIMIT_LOGIN', '10'),
+        'login_window_seconds' => (int) Env::get('RATE_LIMIT_LOGIN_WINDOW', '60'),
+        'api_limit' => (int) Env::get('RATE_LIMIT_API', '120'),
+        'api_window_seconds' => (int) Env::get('RATE_LIMIT_API_WINDOW', '60'),
+    ],
 ];

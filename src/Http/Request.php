@@ -26,6 +26,7 @@ final class Request
         public readonly array $files = [],
         public readonly array $cookies = [],
         public readonly array $attributes = [],
+        public readonly string $ip = '',
     ) {
     }
 
@@ -50,7 +51,25 @@ final class Request
             $decoded = $raw === '' ? [] : json_decode($raw, true);
             $body = is_array($decoded) ? $decoded : [];
         }
-        return new self($method, $path, $_GET, $body, $headers, $_FILES, $_COOKIE);
+        return new self($method, $path, $_GET, $body, $headers, $_FILES, $_COOKIE, ip: self::resolveIp());
+    }
+
+    /**
+     * Fly.io terminates TLS at its edge and forwards the real client IP in `Fly-Client-IP`; that
+     * header cannot be spoofed by the client since Fly overwrites it. Falls back to the first
+     * X-Forwarded-For hop, then REMOTE_ADDR, for local/XAMPP runs with no such proxy in front.
+     */
+    private static function resolveIp(): string
+    {
+        $flyIp = trim((string) ($_SERVER['HTTP_FLY_CLIENT_IP'] ?? ''));
+        if ($flyIp !== '') {
+            return $flyIp;
+        }
+        $forwardedFor = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+        if ($forwardedFor !== '') {
+            return trim(explode(',', $forwardedFor)[0]);
+        }
+        return (string) ($_SERVER['REMOTE_ADDR'] ?? '');
     }
 
     /**
@@ -128,7 +147,7 @@ final class Request
     /** @param array<string,string> $attributes */
     public function withAttributes(array $attributes): self
     {
-        return new self($this->method, $this->path, $this->query, $this->body, $this->headers, $this->files, $this->cookies, $attributes + $this->attributes);
+        return new self($this->method, $this->path, $this->query, $this->body, $this->headers, $this->files, $this->cookies, $attributes + $this->attributes, $this->ip);
     }
 
     public function isXhr(): bool

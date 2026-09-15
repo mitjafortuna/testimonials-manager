@@ -29,10 +29,12 @@ use App\Http\Controller\SyncController;
 use App\Http\Controller\TestimonialController;
 use App\Http\Kernel;
 use App\Http\Middleware\AuthMiddleware;
+use App\Http\Middleware\RateLimitMiddleware;
 use App\Http\Middleware\RequireXhrMiddleware;
 use App\Http\Router;
 use App\Infrastructure\Auth\SessionAuth;
 use App\Infrastructure\Db\PdoFactory;
+use App\Infrastructure\RateLimit\FileRateLimiter;
 use App\Infrastructure\Repository\ChangeLogRepository;
 use App\Infrastructure\Repository\ImageRepository;
 use App\Infrastructure\Repository\LandingRepository;
@@ -61,10 +63,22 @@ return static function (array $config): Container {
         return $router;
     });
     $c->set(SessionAuth::class, fn () => new SessionAuth((string) $config['session']['name']));
+    $c->set(FileRateLimiter::class, fn (Container $c) => new FileRateLimiter($config['rate_limit']['dir'], $c->get(Clock::class)));
     $c->set(Kernel::class, fn (Container $c) => new Kernel(
         $c,
         $c->get(Router::class),
-        [new RequireXhrMiddleware(), new AuthMiddleware($c->get(SessionAuth::class))],
+        [
+            new RateLimitMiddleware(
+                $c->get(FileRateLimiter::class),
+                (int) $config['rate_limit']['login_limit'],
+                (int) $config['rate_limit']['login_window_seconds'],
+                (int) $config['rate_limit']['api_limit'],
+                (int) $config['rate_limit']['api_window_seconds'],
+                (bool) $config['rate_limit']['enabled'],
+            ),
+            new RequireXhrMiddleware(),
+            new AuthMiddleware($c->get(SessionAuth::class)),
+        ],
         (bool) $config['debug'],
     ));
 
