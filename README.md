@@ -27,7 +27,7 @@ Either way:
 
 1. Copy `.env.example` to `.env`; set `DB_HOST=127.0.0.1` and your MySQL credentials.
 2. Import `database/schema.sql`, then `database/seed.sql`, then run `php database/seed-images.php` (creates the demo photos).
-3. Make sure `storage/uploads/` is writable by the web server.
+3. Make sure `storage/uploads/` and `storage/ratelimit/` are writable by the web server.
 
 The release ZIP ships a `vendor/` directory, so Composer is not required.
 
@@ -62,6 +62,12 @@ Built on top of the core assignment brief:
 - **Change log / audit trail.** Each testimonial has a history panel showing who created/updated/deleted it and when, plus image add/remove events (see the scope note under "Deliberate shortcuts").
 - **Image processing.** Uploads are downscaled to a sane maximum dimension automatically; conversion to WebP and cropping to a square are both opt-in per upload.
 
+## One improvement
+
+Beyond the assignment brief and its 7 bonus options, one thing was added on my own initiative: **per-IP rate limiting** (`RateLimitMiddleware`, `FileRateLimiter`). Every `/api/*` route now sits behind a fixed-window request counter — a tight bucket on `POST /api/auth/login` (10 attempts/minute per IP) and a looser general bucket on everything else (120 requests/minute per IP), both configurable via env vars.
+
+**Why:** the login endpoint had no throttling at all — a single seeded admin account (`admin`/`admin123`) behind an internet-reachable form is a plain invitation to brute-force, and it was an explicitly documented shortcut in this README until now. Fixing it doesn't need Redis or a queue: a small file-backed counter (one JSON file per IP+bucket, guarded with `flock`) is enough for the single-machine Fly deployment this app actually runs on, and it's disabled automatically under `APP_ENV=test` so the API/e2e suites — which log in once per test, back-to-back — aren't throttled by their own speed.
+
 ## Deliberate shortcuts
 
 Filled in as phases land. Known so far:
@@ -79,7 +85,8 @@ Filled in as phases land. Known so far:
 - SKU is derived from the landing URL's last path segment (works for the current upstream URL shape; brittle if it changes).
 - `ImageService::upload()` is not transactional across a multi-file batch (validation-first makes this reachable only on a disk/GD failure mid-batch).
 - `ImageRepository::insert()`'s `sort_order` allocation (`SELECT MAX+1` then `INSERT`) isn't atomic under concurrent uploads to the same testimonial.
-- No login rate-limiting/throttling; `session.use_strict_mode` isn't set (session-fixation is still covered by `session_regenerate_id()` on login).
+- `session.use_strict_mode` isn't set (session-fixation is still covered by `session_regenerate_id()` on login).
+- Rate limiting is a simple per-IP fixed-window counter backed by local files (`storage/ratelimit/`), not a sliding window or a shared store — fine for a single small machine, would need Redis (or similar) behind a load balancer with multiple instances.
 - `database/seed-images.php` always writes JPEG bytes regardless of the target filename's extension (safe today because every seeded row's filename ends `.jpg`).
 - Copying testimonials between countries (phase 12) copies testimonial fields only, not their images — a copied testimonial starts with zero images.
 - Bulk delete (phase 13) is not transactional across the selected ids — a failure partway through can leave a partial delete.

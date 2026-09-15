@@ -2,6 +2,8 @@
 /.env
 /storage/uploads/*
 !/storage/uploads/.gitkeep
+/storage/ratelimit/*
+!/storage/ratelimit/.gitkeep
 /tests/e2e/node_modules/
 /tests/e2e/playwright-report/
 /tests/e2e/test-results/

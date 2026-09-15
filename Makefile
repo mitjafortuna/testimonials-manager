@@ -22,7 +22,7 @@ unit:
 integration:
 	$(RUN) composer test:integration
 api:           ## API suite against a built-in PHP server inside the container (mirrors CI)
-	$(COMPOSE) exec -T app pkill -f 'php -S 127.0.0.1:8081' >/dev/null 2>&1; $(COMPOSE) exec -e LANDINGS_API_FIXTURE=tests/fixtures/landings.json -e API_BASE_URL=http://127.0.0.1:8081 app sh -c "php -S 127.0.0.1:8081 -t public public/index.php >/tmp/php-server.log 2>&1 & sleep 1; composer test:api"
+	$(COMPOSE) exec -T app pkill -f 'php -S 127.0.0.1:8081' >/dev/null 2>&1; $(COMPOSE) exec -e APP_ENV=test -e LANDINGS_API_FIXTURE=tests/fixtures/landings.json -e API_BASE_URL=http://127.0.0.1:8081 app sh -c "php -S 127.0.0.1:8081 -t public public/index.php >/tmp/php-server.log 2>&1 & sleep 1; composer test:api"
 lint:
 	$(RUN) composer lint
 lint-fix:
